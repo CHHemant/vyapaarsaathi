@@ -1,0 +1,63 @@
+{
+  "@@locale": "hi",
+
+  "appTitle": "व्यापार साथी AI",
+
+  "homeGreeting": "नमस्ते, {name}!",
+
+  "todaySummary": "आज का सारांश",
+  "income": "आमदनी",
+  "expenses": "खर्च",
+  "net": "शुद्ध",
+
+  "captureTransaction": "लेनदेन कैप्चर करें",
+  "viewCreditScore": "क्रेडिट स्कोर देखें",
+  "generateBill": "बिल बनाएं",
+
+  "creditScore": "क्रेडिट स्कोर",
+  "loanEligibility": "लोन पात्रता",
+  "loanEligibilityHigh": "उच्च - ₹50,000 तक",
+  "loanEligibilityMedium": "मध्यम - ₹15,000 तक",
+  "loanEligibilityLow": "कम - ₹5,000 तक",
+  "downloadCreditReport": "क्रेडिट रिपोर्ट डाउनलोड करें",
+  "consistency": "नियमितता",
+  "diversity": "विविधता",
+  "avgIncome": "औसत आमदनी",
+  "lowScoreTip": "नियमित लेनदेन डालिए, स्कोर बढ़ाइए!",
+
+  "generateInvoice": "बिल बनाएं",
+  "gstInvoiceTitle": "जीएसटी इनवॉइस",
+  "customerNameOptional": "ग्राहक का नाम (वैकल्पिक)",
+  "customerPhoneLabel": "ग्राहक का फ़ोन नंबर (जीएसटी रिकॉर्ड के लिए)",
+  "addItemByVoice": "आवाज़ से आइटम जोड़ें",
+  "subtotal": "उप-योग",
+  "gst": "जीएसटी",
+  "total": "कुल",
+  "sendViaOfficeKit": "ऑफिस किट से भेजें",
+  "backToEdit": "संपादन पर वापस जाएं",
+
+  "cashFlowHeatmap": "नकदी प्रवाह",
+  "mirrorToLaptop": "लैपटॉप पर मिरर करें",
+  "stopMirroring": "मिररिंग रोकें",
+  "exportHeatmap": "निर्यात करें",
+  "bestDay": "सबसे अच्छा दिन",
+  "worstDay": "सबसे कमज़ोर दिन",
+  "trend": "रुझान",
+  "notEnoughData": "पर्याप्त डेटा नहीं है",
+
+  "noTransactionsToday": "इंका ट्रांजैक्शन्स लेदु",
+  "workingOffline": "ऑफ़लाइन काम कर रहे हैं",
+  "lastUpdated": "आखिरी अपडेट: {time}",
+
+  "verifyManually": "क्या मैन्युअल रूप से जांचें?",
+  "networkSlowRetry": "नेटवर्क धीमा है, फिर से कोशिश करें?",
+  "retry": "फिर से कोशिश करें",
+  "cancel": "रद्द करें",
+  "confirm": "पुष्टि करें",
+  "retake": "फिर से लें",
+  "success": "लेनदेन सेव हो गया!",
+  "error": "कुछ गड़बड़ हो गई",
+
+  "dayStreak": "{count}-दिन की स्ट्रीक!",
+  "proVyapari": "प्रो व्यापारी"
+}

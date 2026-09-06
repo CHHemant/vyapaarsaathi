@@ -1,0 +1,76 @@
+{
+  "@@locale": "en",
+
+  "appTitle": "VyapaarSaathi AI",
+  "@appTitle": {"description": "App name shown in OS task switcher / title bar"},
+
+  "homeGreeting": "Namaste, {name}!",
+  "@homeGreeting": {
+    "description": "Home dashboard greeting",
+    "placeholders": { "name": { "type": "String", "example": "Rajesh Anna" } }
+  },
+
+  "todaySummary": "Today's Summary",
+  "income": "Income",
+  "expenses": "Expenses",
+  "net": "Net",
+
+  "captureTransaction": "Capture Transaction",
+  "viewCreditScore": "View Credit Score",
+  "generateBill": "Generate Bill",
+
+  "creditScore": "Credit Score",
+  "loanEligibility": "Loan Eligibility",
+  "loanEligibilityHigh": "High - Up to ₹50,000",
+  "loanEligibilityMedium": "Medium - Up to ₹15,000",
+  "loanEligibilityLow": "Low - Up to ₹5,000",
+  "downloadCreditReport": "Download Credit Report",
+  "consistency": "Consistency",
+  "diversity": "Diversity",
+  "avgIncome": "Avg Income",
+  "lowScoreTip": "Regular transactions veyandi, score penchukondi!",
+
+  "generateInvoice": "Generate Bill",
+  "gstInvoiceTitle": "GST Invoice",
+  "customerNameOptional": "Customer name (optional)",
+  "customerPhoneLabel": "Customer phone (for GST record)",
+  "addItemByVoice": "Add item by voice",
+  "subtotal": "Subtotal",
+  "gst": "GST",
+  "total": "Total",
+  "sendViaOfficeKit": "Send via Office Kit",
+  "backToEdit": "Back to Edit",
+
+  "cashFlowHeatmap": "Cash Flow",
+  "mirrorToLaptop": "Mirror to Laptop",
+  "stopMirroring": "Stop Mirroring",
+  "exportHeatmap": "Export",
+  "bestDay": "Best Day",
+  "worstDay": "Worst Day",
+  "trend": "Trend",
+  "notEnoughData": "Not enough data",
+
+  "noTransactionsToday": "Inka transactions ledu",
+  "workingOffline": "Working offline",
+  "lastUpdated": "Last updated: {time}",
+  "@lastUpdated": {
+    "description": "Cached-data badge timestamp",
+    "placeholders": { "time": { "type": "String", "example": "2h ago" } }
+  },
+
+  "verifyManually": "Verify manually?",
+  "networkSlowRetry": "Network slow, retry?",
+  "retry": "Retry",
+  "cancel": "Cancel",
+  "confirm": "Confirm",
+  "retake": "Retake",
+  "success": "Transaction saved!",
+  "error": "Something went wrong",
+
+  "dayStreak": "{count}-day streak!",
+  "@dayStreak": {
+    "description": "Home streak counter",
+    "placeholders": { "count": { "type": "int", "example": "7" } }
+  },
+  "proVyapari": "Pro Vyapari"
+}

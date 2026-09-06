@@ -1,0 +1,63 @@
+{
+  "@@locale": "te",
+
+  "appTitle": "వ్యాపార సాథి AI",
+
+  "homeGreeting": "నమస్కారం, {name}!",
+
+  "todaySummary": "ఈ రోజు సారాంశం",
+  "income": "ఆదాయం",
+  "expenses": "ఖర్చులు",
+  "net": "నికర",
+
+  "captureTransaction": "లావాదేవీ క్యాప్చర్ చేయండి",
+  "viewCreditScore": "క్రెడిట్ స్కోర్ చూడండి",
+  "generateBill": "బిల్లు తయారు చేయండి",
+
+  "creditScore": "క్రెడిట్ స్కోర్",
+  "loanEligibility": "రుణ అర్హత",
+  "loanEligibilityHigh": "అధికం - ₹50,000 వరకు",
+  "loanEligibilityMedium": "మధ్యస్థం - ₹15,000 వరకు",
+  "loanEligibilityLow": "తక్కువ - ₹5,000 వరకు",
+  "downloadCreditReport": "క్రెడిట్ రిపోర్ట్ డౌన్‌లోడ్ చేయండి",
+  "consistency": "స్థిరత్వం",
+  "diversity": "వైవిధ్యం",
+  "avgIncome": "సగటు ఆదాయం",
+  "lowScoreTip": "రెగ్యులర్ ట్రాన్సాక్షన్లు వేయండి, స్కోర్ పెంచుకోండి!",
+
+  "generateInvoice": "బిల్లు తయారు చేయండి",
+  "gstInvoiceTitle": "జీఎస్టీ ఇన్వాయిస్",
+  "customerNameOptional": "కస్టమర్ పేరు (ఐచ్ఛికం)",
+  "customerPhoneLabel": "కస్టమర్ ఫోన్ నంబర్ (జీఎస్టీ రికార్డ్ కోసం)",
+  "addItemByVoice": "వాయిస్ ద్వారా ఐటమ్ జోడించండి",
+  "subtotal": "ఉప మొత్తం",
+  "gst": "జీఎస్టీ",
+  "total": "మొత్తం",
+  "sendViaOfficeKit": "ఆఫీస్ కిట్ ద్వారా పంపండి",
+  "backToEdit": "ఎడిట్‌కి తిరిగి వెళ్ళండి",
+
+  "cashFlowHeatmap": "నగదు ప్రవాహం",
+  "mirrorToLaptop": "ల్యాప్‌టాప్‌కి మిర్రర్ చేయండి",
+  "stopMirroring": "మిర్రరింగ్ ఆపండి",
+  "exportHeatmap": "ఎగుమతి చేయండి",
+  "bestDay": "ఉత్తమ రోజు",
+  "worstDay": "అత్యల్ప రోజు",
+  "trend": "ధోరణి",
+  "notEnoughData": "తగినంత డేటా లేదు",
+
+  "noTransactionsToday": "ఇంకా ట్రాన్సాక్షన్లు లేదు",
+  "workingOffline": "ఆఫ్‌లైన్‌లో పని చేస్తోంది",
+  "lastUpdated": "చివరిసారి అప్‌డేట్: {time}",
+
+  "verifyManually": "మాన్యువల్‌గా వెరిఫై చేయాలా?",
+  "networkSlowRetry": "నెట్‌వర్క్ నెమ్మది, మళ్ళీ ప్రయత్నించాలా?",
+  "retry": "మళ్ళీ ప్రయత్నించండి",
+  "cancel": "రద్దు చేయండి",
+  "confirm": "నిర్ధారించండి",
+  "retake": "మళ్ళీ తీయండి",
+  "success": "లావాదేవీ సేవ్ అయింది!",
+  "error": "ఏదో తప్పు జరిగింది",
+
+  "dayStreak": "{count}-రోజుల స్ట్రీక్!",
+  "proVyapari": "ప్రో వ్యాపారి"
+}
