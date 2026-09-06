@@ -15,7 +15,7 @@ uvicorn[standard]==0.32.1
 pydantic==2.10.3
 pydantic-settings==2.6.1
 sqlalchemy==2.0.36
-python-multipart==0.0.19
+python-multipart==0.0.31
 
 # Image handling / preprocessing for transaction capture
 pillow==12.3.0
