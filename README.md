@@ -331,7 +331,7 @@ No cloud servers
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    PRESENTATION LAYER                        │
+│                    PRESENTATION LAYER                       │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────────┐   │
 │  │ Flutter UI   │  │ Voice        │  │ Office Kit       │   │
 │  │ Screens      │  │ Commands     │  │ Screen Mirror    │   │
@@ -339,7 +339,7 @@ No cloud servers
 └─────────────────────────────────────────────────────────────┘
                             ↓
 ┌─────────────────────────────────────────────────────────────┐
-│                   APPLICATION LAYER                          │
+│                   APPLICATION LAYER                         │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────────┐   │
 │  │ Transaction  │  │ Credit       │  │ GST Invoice      │   │
 │  │ Manager      │  │ Scorer       │  │ Generator        │   │
@@ -351,7 +351,7 @@ No cloud servers
 └─────────────────────────────────────────────────────────────┘
                             ↓
 ┌─────────────────────────────────────────────────────────────┐
-│                      AI/ML LAYER                             │
+│                      AI/ML LAYER                            │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────────┐   │
 │  │ Vision (OCR) │  │ ASR          │  │ SLM (Credit)     │   │
 │  │ TFLite       │  │ Whisper      │  │ Phi-3 Mini       │   │
@@ -359,7 +359,7 @@ No cloud servers
 └─────────────────────────────────────────────────────────────┘
                             ↓
 ┌─────────────────────────────────────────────────────────────┐
-│                      DATA LAYER                              │
+│                      DATA LAYER                             │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────────┐   │
 │  │ Hive (Local) │  │ SQLite       │  │ Secure Storage   │   │
 │  │              │  │ (Reports)    │  │ (Tokens, Keys)   │   │
@@ -367,7 +367,7 @@ No cloud servers
 └─────────────────────────────────────────────────────────────┘
                             ↓
 ┌─────────────────────────────────────────────────────────────┐
-│                    HARDWARE LAYER                            │
+│                    HARDWARE LAYER                           │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────────┐   │
 │  │ Camera       │  │ Microphone   │  │ Snapdragon NPU   │   │
 │  │ (Vision)     │  │ (Audio)      │  │ (Hexagon AI)     │   │
@@ -951,15 +951,6 @@ flutter test integration_test/
 **Core Team (Hackathon)**
 
 - **Hemant Chilkuri** — Full-Stack Developer, AI/ML
-- [Team Member 2] — Flutter/UI Developer
-- [Team Member 3] — AI/ML Engineer
-- [Team Member 4] — Designer, Pitch Lead
-
-**Advisors**
-
-- [Mentor Name] — [Role, e.g., "AI Researcher, IIT Hyderabad"]
-- [Mentor Name] — [Role, e.g., "Fintech Entrepreneur"]
-
 ---
 
 ## **Contributing**
@@ -995,10 +986,10 @@ This project is licensed under the MIT License — see the [LICENSE](LICENSE) fi
 
 **Summary:**
 
-- ✅ Free to use for personal and commercial purposes
-- ✅ Modify and distribute
-- ✅ Include original license and copyright notice
-- ❌ No warranty provided
+- Free to use for personal and commercial purposes
+- Modify and distribute
+- Include original license and copyright notice
+- No warranty provided
 
 ---
 
@@ -1019,18 +1010,6 @@ This project is licensed under the MIT License — see the [LICENSE](LICENSE) fi
 - Riverpod — State management
 - Hive — Local NoSQL database
 
-**Hackathon Support**
-
-- iQOO — Loaner phones, HackTracker telemetry
-- Reskilll — Mentorship, resources
-- Judges and Mentors — Feedback and guidance
-
-**Community**
-
-- Laad Bazaar shopkeepers (Hyderabad) — User research, feedback
-- Local trader associations — Go-to-market partnerships
-- Early testers — Bug reports, feature suggestions
-
 ---
 
 ## **Contact**
@@ -1041,25 +1020,13 @@ This project is licensed under the MIT License — see the [LICENSE](LICENSE) fi
 **LinkedIn:** [Your LinkedIn Profile]  
 **Twitter:** [@YourTwitterHandle]
 
-**For Press & Media:**
-
-- Press kit: [Link to Google Drive folder]
-- Logo: [Link to SVG/PNG files]
-- Screenshots: [Link to high-res images]
-
-**For Banks & Partners:**
-
-- Partnership deck: [Link to PDF]
-- API documentation: [Link to docs]
-- Contact: partnerships@vyapaarsaathi.com
-
 ---
 
 ## **Built With ❤️ for India's Small Businesses**
 
-**VyapaarSaathi AI** — From no credit to ₹50,000 loan in 30 days, using only your phone.
+**VyapaarSaathi** — From no credit to ₹50,000 loan in 30 days, using only your phone.
 
 ---
 
-*Last Updated: September 7, 2026*  
+*Last Updated: September, 2026*  
 *Version: 1.0.0 (Hackathon Build)*
