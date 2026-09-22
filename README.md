@@ -1015,10 +1015,9 @@ This project is licensed under the MIT License — see the [LICENSE](LICENSE) fi
 ## **Contact**
 
 **Project Lead:** Hemant Chilkuri  
-**Email:** [your-email@example.com]  
+**Email:** [hemantchoudary0@gmail.com.com]  
 **GitHub:** [@CHHemant](https://github.com/CHHemant)  
-**LinkedIn:** [Your LinkedIn Profile]  
-**Twitter:** [@YourTwitterHandle]
+**LinkedIn:** [https://in.linkedin.com/in/hemant-chilkuri]  
 
 ---
 
