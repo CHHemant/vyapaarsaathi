@@ -1,10 +1,11 @@
 // frontend/lib/widgets/rupee_button.dart
 
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../theme/kirana_colors.dart';
 
-/// A premium action button with fluid animations, 
-/// realistic gradients, and sophisticated typography.
+/// A sleek action button based on the True Master Dashboard design.
+/// Uses high-contrast typography and tactile feedback.
 class RupeeButton extends StatefulWidget {
   final String label;
   final VoidCallback? onPressed;
@@ -31,7 +32,8 @@ class RupeeButton extends StatefulWidget {
   State<RupeeButton> createState() => _RupeeButtonState();
 }
 
-class _RupeeButtonState extends State<RupeeButton> with SingleTickerProviderStateMixin {
+class _RupeeButtonState extends State<RupeeButton>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
 
@@ -42,7 +44,7 @@ class _RupeeButtonState extends State<RupeeButton> with SingleTickerProviderStat
       vsync: this,
       duration: const Duration(milliseconds: 100),
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.96).animate(_controller);
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(_controller);
   }
 
   @override
@@ -55,49 +57,46 @@ class _RupeeButtonState extends State<RupeeButton> with SingleTickerProviderStat
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
-    final effectiveGradient = widget.gradient ?? KiranaColors.premiumGradient;
-    
+
+    final backgroundColor = widget.color ?? KiranaColors.secondaryContainer;
+    final onBackgroundColor = KiranaColors.onSecondaryContainer;
+
     final content = widget.isLoading
-        ? const SizedBox(
+        ? SizedBox(
             height: 20,
             width: 20,
             child: CircularProgressIndicator(
               strokeWidth: 2.5,
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              valueColor: AlwaysStoppedAnimation<Color>(onBackgroundColor),
             ),
           )
         : Row(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              if (widget.icon != null) ...[
-                Icon(widget.icon, color: Colors.white, size: 20),
-                const SizedBox(width: 10),
-              ],
               if (widget.showRupeePrefix)
-                const Text(
+                Text(
                   '₹ ',
-                  style: TextStyle(
-                    fontFamily: 'RobotoMono',
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                    color: Colors.white,
+                  style: GoogleFonts.bebasNeue(
+                    fontSize: 22,
+                    color: onBackgroundColor,
                   ),
                 ),
               Flexible(
                 child: Text(
-                  widget.label,
-                  style: const TextStyle(
-                    fontFamily: 'Quicksand',
-                    fontWeight: FontWeight.w700,
-                    fontSize: 16,
-                    color: Colors.white,
-                    letterSpacing: 0.5,
+                  widget.label.toUpperCase(),
+                  style: GoogleFonts.bebasNeue(
+                    fontSize: 20,
+                    color: onBackgroundColor,
+                    letterSpacing: 1.2,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
+              if (widget.icon != null) ...[
+                const SizedBox(width: 8),
+                Icon(widget.icon, color: onBackgroundColor, size: 20),
+              ],
             ],
           );
 
@@ -110,19 +109,19 @@ class _RupeeButtonState extends State<RupeeButton> with SingleTickerProviderStat
         onTap: widget.isLoading ? null : widget.onPressed,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
           decoration: BoxDecoration(
-            gradient: widget.onPressed == null ? null : effectiveGradient,
-            color: widget.onPressed == null 
-                ? (isDark ? Colors.white10 : Colors.black12) 
-                : widget.color,
-            borderRadius: BorderRadius.circular(18),
+            gradient: widget.onPressed == null ? null : widget.gradient,
+            color: widget.onPressed == null
+                ? (isDark ? Colors.white10 : Colors.black12)
+                : (widget.gradient == null ? backgroundColor : null),
+            borderRadius: BorderRadius.circular(100),
             boxShadow: [
               if (widget.onPressed != null)
                 BoxShadow(
-                  color: (widget.color ?? KiranaColors.primary).withOpacity(0.3),
-                  blurRadius: 15,
-                  offset: const Offset(0, 8),
+                  color: backgroundColor.withValues(alpha: 0.2),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
                 ),
             ],
           ),

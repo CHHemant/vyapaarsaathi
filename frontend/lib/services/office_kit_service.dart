@@ -54,8 +54,9 @@ class OfficeKitService {
     try {
       // ASSUMPTION: sdk.OfficeKit.isConnected() — verify against real SDK.
       final connected = await sdk.OfficeKit.isConnected();
-      _connectionState =
-          connected ? OfficeKitConnectionState.connected : OfficeKitConnectionState.disconnected;
+      _connectionState = connected
+          ? OfficeKitConnectionState.connected
+          : OfficeKitConnectionState.disconnected;
     } catch (e) {
       debugPrint('[OfficeKitService] connection check failed: $e');
       _connectionState = OfficeKitConnectionState.unknown;
@@ -81,7 +82,8 @@ class OfficeKitService {
       await checkConnection();
     }
     if (_connectionState != OfficeKitConnectionState.connected) {
-      return const OfficeKitFailure('Laptop not paired. Reconnect Office Kit and try again.');
+      return const OfficeKitFailure(
+          'Laptop not paired. Reconnect Office Kit and try again.');
     }
 
     try {
@@ -127,7 +129,8 @@ class OfficeKitService {
       await checkConnection();
     }
     if (_connectionState != OfficeKitConnectionState.connected) {
-      return const OfficeKitFailure('Laptop not paired. Reconnect Office Kit and try again.');
+      return const OfficeKitFailure(
+          'Laptop not paired. Reconnect Office Kit and try again.');
     }
 
     try {

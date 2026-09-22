@@ -1,0 +1,63 @@
+import 'dart:convert';
+
+import 'package:hive/hive.dart';
+
+import '../models/invoice.dart';
+
+class InvoiceService {
+  static const String _boxName = 'invoices_cache';
+
+  Future<Box<String>> _openBox() async {
+    if (Hive.isBoxOpen(_boxName)) {
+      return Hive.box<String>(_boxName);
+    }
+
+    return Hive.openBox<String>(_boxName);
+  }
+
+  /// Returns all locally saved invoices.
+  ///
+  /// Newest invoices are returned first.
+  Future<List<Invoice>> getInvoices() async {
+    final box = await _openBox();
+
+    final invoices = <Invoice>[];
+
+    for (final value in box.values) {
+      try {
+        final decoded = jsonDecode(value);
+
+        if (decoded is Map<String, dynamic>) {
+          invoices.add(
+            Invoice.fromJson(decoded),
+          );
+        }
+      } catch (_) {
+        // Ignore invalid/corrupted invoice records.
+      }
+    }
+
+    return invoices.reversed.toList();
+  }
+
+  /// Saves an invoice locally.
+  Future<void> saveInvoice(Invoice invoice) async {
+    final box = await _openBox();
+
+    final key = DateTime.now()
+        .microsecondsSinceEpoch
+        .toString();
+
+    await box.put(
+      key,
+      jsonEncode(invoice.toJson()),
+    );
+  }
+
+  /// Deletes all locally stored invoices.
+  Future<void> clearInvoices() async {
+    final box = await _openBox();
+
+    await box.clear();
+  }
+}

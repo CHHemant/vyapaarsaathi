@@ -1,82 +1,213 @@
 // frontend/lib/services/credit_service.dart
 
-import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+
 import '../models/credit_entry.dart';
 
+/// Local persistence service for legacy/direct Khata access.
+///
+/// The service preserves the existing `udhaar_entries` Hive box so existing
+/// data and callers are not silently moved to a different storage location.
+///
+/// Payment state is represented by:
+/// - [CreditEntry.amount]      -> original entry amount
+/// - [CreditEntry.paidAmount]  -> total amount paid so far
+/// - [CreditEntry.remainingAmount] -> current outstanding amount
+/// - [CreditEntry.isPaid]     -> true only when the entry is fully settled
 class CreditService {
   static const String _boxName = 'udhaar_entries';
+
   Box<dynamic>? _box;
 
   Future<void> initialize() async {
-    _box = await Hive.openBox(_boxName);
+    if (_box?.isOpen == true) {
+      return;
+    }
+
+    _box = await Hive.openBox<dynamic>(_boxName);
+  }
+
+  Future<Box<dynamic>> get _storage async {
+    if (_box?.isOpen != true) {
+      await initialize();
+    }
+
+    return _box!;
   }
 
   Future<List<CreditEntry>> getAllEntries() async {
-    if (_box == null) await initialize();
-
+    final box = await _storage;
     final entries = <CreditEntry>[];
-    for (final data in _box!.values) {
+
+    for (final data in box.values) {
       if (data is CreditEntry) {
         entries.add(data);
       } else if (data is Map) {
-        entries.add(CreditEntry.fromJson(Map<String, dynamic>.from(data)));
+        entries.add(
+          CreditEntry.fromJson(
+            Map<String, dynamic>.from(data),
+          ),
+        );
       }
     }
 
-    // Sort by date (newest first)
-    entries.sort((a, b) => b.date.compareTo(a.date));
+    entries.sort(
+      (a, b) => b.date.compareTo(a.date),
+    );
+
     return entries;
   }
 
+  /// Returns entries that still have an outstanding balance.
+  ///
+  /// This includes both completely unpaid and partially paid entries.
   Future<List<CreditEntry>> getUnpaidEntries() async {
     final all = await getAllEntries();
-    return all.where((e) => !e.isPaid).toList();
+
+    return all.where((entry) => entry.hasOutstanding).toList();
   }
 
   Future<CreditEntry> addEntry(CreditEntry entry) async {
-    if (_box == null) await initialize();
-    await _box!.put(entry.id, entry.toJson());
+    final box = await _storage;
+
+    await box.put(
+      entry.id,
+      entry.toJson(),
+    );
+
     return entry;
   }
 
-  Future<void> markAsPaid(String entryId) async {
-    if (_box == null) await initialize();
-    final data = _box!.get(entryId);
-    if (data != null) {
-      final entry = data is CreditEntry
-          ? data
-          : CreditEntry.fromJson(Map<String, dynamic>.from(data));
-      final updated = entry.copyWith(
-        isPaid: true,
-        paidAt: DateTime.now(),
+  /// Records a partial or full payment against a Khata entry.
+  ///
+  /// Throws [ArgumentError] when the payment is invalid or exceeds the
+  /// remaining balance, and [StateError] when the entry cannot be found or
+  /// is already fully paid.
+  Future<CreditEntry> recordPayment(
+    String entryId,
+    double paymentAmount,
+  ) async {
+    final box = await _storage;
+
+    if (paymentAmount <= 0) {
+      throw ArgumentError(
+        'Payment amount must be greater than zero.',
       );
-      await _box!.put(entryId, updated.toJson());
     }
+
+    final data = box.get(entryId);
+
+    if (data == null) {
+      throw StateError(
+        'Credit entry not found: $entryId',
+      );
+    }
+
+    final entry = _decodeEntry(data);
+
+    if (!entry.hasOutstanding) {
+      throw StateError(
+        'This credit entry is already fully paid.',
+      );
+    }
+
+    if (paymentAmount > entry.remainingAmount + 0.000001) {
+      throw ArgumentError(
+        'Payment cannot exceed the remaining balance.',
+      );
+    }
+
+    final newPaidAmount = entry.paidAmount + paymentAmount;
+    final isNowFullyPaid = newPaidAmount >= entry.amount;
+
+    final updated = entry.copyWith(
+      paidAmount: isNowFullyPaid ? entry.amount : newPaidAmount,
+      isPaid: isNowFullyPaid,
+      paidAt: DateTime.now(),
+    );
+
+    await box.put(
+      entryId,
+      updated.toJson(),
+    );
+
+    return updated;
+  }
+
+  /// Marks the complete remaining balance as paid.
+  ///
+  /// Kept for compatibility with existing callers that need a one-step
+  /// full-settlement action.
+  Future<void> markAsPaid(String entryId) async {
+    final box = await _storage;
+    final data = box.get(entryId);
+
+    if (data == null) {
+      return;
+    }
+
+    final entry = _decodeEntry(data);
+
+    if (!entry.hasOutstanding) {
+      return;
+    }
+
+    final updated = entry.copyWith(
+      paidAmount: entry.amount,
+      isPaid: true,
+      paidAt: DateTime.now(),
+    );
+
+    await box.put(
+      entryId,
+      updated.toJson(),
+    );
   }
 
   Future<void> deleteEntry(String entryId) async {
-    if (_box == null) await initialize();
-    await _box!.delete(entryId);
+    final box = await _storage;
+    await box.delete(entryId);
   }
 
+  /// Returns financial totals based on the actual remaining balances.
   Future<Map<String, dynamic>> getSummary() async {
     final all = await getAllEntries();
-    final unpaid = all.where((e) => !e.isPaid).toList();
 
-    final totalGiven = unpaid
-        .where((e) => e.type == 'given')
-        .fold<double>(0, (sum, e) => sum + e.amount);
+    final outstanding = all.where((entry) => entry.hasOutstanding).toList();
 
-    final totalTaken = unpaid
-        .where((e) => e.type == 'taken')
-        .fold<double>(0, (sum, e) => sum + e.amount);
+    final totalGiven =
+        outstanding.where((entry) => entry.type == 'given').fold<double>(
+              0,
+              (sum, entry) => sum + entry.remainingAmount,
+            );
 
-    return {
+    final totalTaken =
+        outstanding.where((entry) => entry.type == 'taken').fold<double>(
+              0,
+              (sum, entry) => sum + entry.remainingAmount,
+            );
+
+    return <String, dynamic>{
       'totalGiven': totalGiven,
       'totalTaken': totalTaken,
       'netCredit': totalGiven - totalTaken,
-      'unpaidCount': unpaid.length,
+      'unpaidCount': outstanding.length,
     };
+  }
+
+  CreditEntry _decodeEntry(dynamic data) {
+    if (data is CreditEntry) {
+      return data;
+    }
+
+    if (data is Map) {
+      return CreditEntry.fromJson(
+        Map<String, dynamic>.from(data),
+      );
+    }
+
+    throw StateError(
+      'Invalid credit entry data stored in Hive.',
+    );
   }
 }

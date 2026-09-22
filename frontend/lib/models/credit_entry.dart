@@ -1,5 +1,3 @@
-// frontend/lib/models/credit_entry.dart
-
 import 'package:json_annotation/json_annotation.dart';
 
 part 'credit_entry.g.dart';
@@ -14,7 +12,14 @@ class CreditEntry {
   final String type; // 'given' or 'taken'
   final DateTime date;
   final String? notes;
+
+  /// Total amount already paid against this Khata entry.
+  final double paidAmount;
+
+  /// True when the complete amount has been settled.
   final bool isPaid;
+
+  /// Time of the most recent payment.
   final DateTime? paidAt;
 
   CreditEntry({
@@ -26,6 +31,7 @@ class CreditEntry {
     required this.type,
     required this.date,
     this.notes,
+    this.paidAmount = 0,
     this.isPaid = false,
     this.paidAt,
   });
@@ -34,6 +40,27 @@ class CreditEntry {
       _$CreditEntryFromJson(json);
 
   Map<String, dynamic> toJson() => _$CreditEntryToJson(this);
+
+  /// Amount still outstanding.
+  double get remainingAmount {
+    final remaining = amount - paidAmount;
+
+    if (remaining <= 0) {
+      return 0;
+    }
+
+    return remaining;
+  }
+
+  /// True when some amount has been paid but the entry is not fully settled.
+  bool get isPartiallyPaid {
+    return paidAmount > 0 && remainingAmount > 0;
+  }
+
+  /// True when there is still money outstanding.
+  bool get hasOutstanding {
+    return remainingAmount > 0;
+  }
 
   CreditEntry copyWith({
     String? id,
@@ -44,8 +71,12 @@ class CreditEntry {
     String? type,
     DateTime? date,
     String? notes,
+    double? paidAmount,
     bool? isPaid,
     DateTime? paidAt,
+
+    /// Allows paidAt to explicitly become null.
+    bool clearPaidAt = false,
   }) {
     return CreditEntry(
       id: id ?? this.id,
@@ -56,8 +87,9 @@ class CreditEntry {
       type: type ?? this.type,
       date: date ?? this.date,
       notes: notes ?? this.notes,
+      paidAmount: paidAmount ?? this.paidAmount,
       isPaid: isPaid ?? this.isPaid,
-      paidAt: paidAt ?? this.paidAt,
+      paidAt: clearPaidAt ? null : (paidAt ?? this.paidAt),
     );
   }
 }

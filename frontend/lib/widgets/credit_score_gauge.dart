@@ -21,15 +21,18 @@ class CreditScoreGauge extends StatefulWidget {
   State<CreditScoreGauge> createState() => _CreditScoreGaugeState();
 }
 
-class _CreditScoreGaugeState extends State<CreditScoreGauge> with SingleTickerProviderStateMixin {
+class _CreditScoreGaugeState extends State<CreditScoreGauge>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   late Animation<double> _animation;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(duration: widget.animationDuration, vsync: this);
-    _animation = CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic);
+    _controller =
+        AnimationController(duration: widget.animationDuration, vsync: this);
+    _animation =
+        CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic);
     _controller.forward();
   }
 
@@ -71,7 +74,7 @@ class _CreditScoreGaugeState extends State<CreditScoreGauge> with SingleTickerPr
             painter: _GaugePainter(
               sweepFraction: (widget.score / 100) * _animation.value,
               color: tierColor,
-              trackColor: theme.colorScheme.onSurface.withOpacity(0.05),
+              trackColor: theme.colorScheme.onSurface.withValues(alpha: 0.05),
             ),
             child: Align(
               alignment: const Alignment(0, 0.6),
@@ -93,7 +96,7 @@ class _CreditScoreGaugeState extends State<CreditScoreGauge> with SingleTickerPr
                       fontFamily: 'RobotoMono',
                       fontSize: widget.size * 0.07,
                       fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.onSurface.withOpacity(0.4),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
                     ),
                   ),
                 ],
@@ -112,7 +115,7 @@ class _GaugePainter extends CustomPainter {
   final Color trackColor;
 
   const _GaugePainter({
-    required this.sweepFraction, 
+    required this.sweepFraction,
     required this.color,
     required this.trackColor,
   });
@@ -138,10 +141,10 @@ class _GaugePainter extends CustomPainter {
       ..strokeWidth = _strokeWidth
       ..strokeCap = StrokeCap.round;
     canvas.drawArc(rect, pi, pi * sweepFraction, false, foregroundPaint);
-    
+
     // Subtle inner shadow effect (simulated)
     final shadowPaint = Paint()
-      ..color = Colors.black.withOpacity(0.05)
+      ..color = Colors.black.withValues(alpha: 0.05)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
@@ -150,6 +153,7 @@ class _GaugePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _GaugePainter oldDelegate) {
-    return oldDelegate.sweepFraction != sweepFraction || oldDelegate.color != color;
+    return oldDelegate.sweepFraction != sweepFraction ||
+        oldDelegate.color != color;
   }
 }

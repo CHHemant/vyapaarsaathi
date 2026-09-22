@@ -24,6 +24,7 @@ import analytics
 import credit_scorer
 import gst_generator
 import transaction_pipeline
+import tax_assistant
 from config import settings
 from database import init_db, get_db, CustomerRecord, TransactionRecord
 
@@ -83,6 +84,9 @@ class VerifyCustomerRequest(BaseModel):
     customer_id: str
     phone_number: str
 
+
+class TaxAssistantRequest(BaseModel):
+    query: str
 
 
 # ---------------------------------------------------------------------
@@ -253,6 +257,17 @@ def verify_customer(payload: VerifyCustomerRequest, db: Session = Depends(get_db
         "is_verified": customer.is_verified,
     }
 
+
+# ---------------------------------------------------------------------
+# 7. POST /api/v1/tax-assistant/query
+# ---------------------------------------------------------------------
+
+
+@app.post("/api/v1/tax-assistant/query")
+def query_tax_assistant(payload: TaxAssistantRequest, db: Session = Depends(get_db)):
+    """Voice-First Tax Assistant - Answers natural language financial queries."""
+    response = tax_assistant.process_tax_query(db, query=payload.query)
+    return {"answer": response}
 
 
 # ---------------------------------------------------------------------

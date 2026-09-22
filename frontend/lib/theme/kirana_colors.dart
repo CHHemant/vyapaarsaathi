@@ -3,50 +3,64 @@
 import 'package:flutter/material.dart';
 
 class KiranaColors {
-  // Premium Modern Fintech Palette
-  static const Color primary = Color(0xFF6366F1);      // Vibrant Indigo
-  static const Color primaryDark = Color(0xFF4F46E5);
-  
-  static const Color secondary = Color(0xFF10B981);    // Emerald Green
-  static const Color tertiary = Color(0xFFF59E0B);     // Amber/Gold
-  
-  // Backgrounds
-  static const Color bgLight = Color(0xFFF8FAFC);      // Light Slate Gray
-  static const Color bgDark = Color(0xFF0F172A);       // Deep Navy
-  
-  // Surface / Cards
-  static const Color surfaceLight = Colors.white;
-  static const Color surfaceDark = Color(0xFF1E293B);  // Slate
-  
-  // Accents
-  static const Color ink = Color(0xFF1E293B);
-  static const Color paper = Color(0xFFF1F5F9);
-  static const Color error = Color(0xFFEF4444);
+  // Master Dashboard Palette (Based on True Master design)
+  static const Color primary = Color(0xFF000000);
+  static const Color onPrimary = Colors.white;
+
+  static const Color secondary = Color(0xFFB22300);
+  static const Color secondaryContainer = Color(0xFFDF2E00);
+  static const Color onSecondaryContainer = Color(0xFFFFFBFF);
+
+  static const Color tertiary = Color(0xFF658C7B);
+  static const Color tertiaryContainer = Color(0xFFC2ECD8);
+  static const Color onTertiaryContainer = Color(0xFF002116);
+
+  static const Color bg = Color(0xFFFCF9F2);
+  static const Color surface = Color(0xFFFCF9F2);
+
+  // Material 3 Style Surface Containers
+  static const Color surfaceContainerLowest = Colors.white;
+  static const Color surfaceContainerLow = Color(0xFFF6F3EC);
+  static const Color surfaceContainer = Color(0xFFF1EEE7);
+  static const Color surfaceContainerHigh = Color(0xFFEBE8E1);
+  static const Color surfaceContainerHighest = Color(0xFFE5E2DB);
+
+  static const Color onSurface = Color(0xFF1C1C18);
+  static const Color onSurfaceVariant = Color(0xFF444748);
+
+  static const Color outlineVariant = Color(0xFFC4C7C7);
+  static const Color error = Color(0xFFBA1A1A);
+
+  // Fixed Color Tokens for Pillars/Badges
+  static const Color tertiaryFixed = Color(0xFFC2ECD8);
+  static const Color secondaryFixed = Color(0xFFFFDAD2);
+
+  // Legacy/Compatibility Aliases
+  static const Color ink = onSurface;
+  static const Color paper = bg;
   static const Color success = Color(0xFF10B981);
   static const Color warning = Color(0xFFF59E0B);
-  
-  // Glassmorphic / Translucent
-  static Color glassWhite = Colors.white.withOpacity(0.7);
-  static Color glassBlack = Colors.black.withOpacity(0.3);
+  static const Color gold = Color(0xFFFBBF24);
+  static const Color info = Color(0xFF3B82F6);
 
-  // Aliases for compatibility
-  static const Color darkBrown = ink;
-  static const Color warmWhite = paper;
-  static const Color saffron = primary;
-  static const Color green = success;
-  static const Color gold = tertiary;
-  static const Color teal = secondary;
-  static const Color red = error;
-  static const Color redDark = Color(0xFFB91C1C);
-  static const Color info = Color(0xFF3B82F6); // Blue
+  static const Color bgLight = bg;
+  static const Color bgDark = Color(0xFF0A0B0E);
+  static const Color surfaceLight = Colors.white;
+  static const Color surfaceDark = Color(0xFF1C1E24);
+
+  static const Color darkBrown = onSurface;
+  static const Color warmWhite = bg;
+  static const Color saffron = secondary;
+  static const Color green = Color(0xFF10B981);
+  static const Color teal = Color(0xFF658C7B);
 
   // Gradients
   static const LinearGradient premiumGradient = LinearGradient(
-    colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+    colors: [primary, Color(0xFF444444)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
-  
+
   static const LinearGradient successGradient = LinearGradient(
     colors: [Color(0xFF10B981), Color(0xFF059669)],
     begin: Alignment.topLeft,
@@ -55,11 +69,10 @@ class KiranaColors {
 
   static const LinearGradient primaryGradient = premiumGradient;
   static const LinearGradient goldGradient = LinearGradient(
-    colors: [tertiary, Color(0xFFD97706)],
+    colors: [gold, Color(0xFFD97706)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
-  static const LinearGradient saffronGradient = premiumGradient;
 
   const KiranaColors._();
 }

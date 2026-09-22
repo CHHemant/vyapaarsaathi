@@ -32,4 +32,8 @@ faster-whisper==1.1.0
 # GST invoice PDF generation
 reportlab==4.2.5
 
+# Local SLM (Phi-3 / Gemma) inference.
+# Note: For Snapdragon NPU acceleration, specific build flags may be needed.
+llama-cpp-python==0.3.1
+
 python-dateutil==2.9.0.post0

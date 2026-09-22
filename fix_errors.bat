@@ -1,0 +1,6 @@
+@echo off
+set "files=frontend/lib/main.dart frontend/lib/screens/auth/login_screen.dart frontend/lib/screens/auth/onboarding_screen.dart frontend/lib/screens/dashboard/dashboard_screen.dart frontend/lib/screens/invoices/invoice_list_screen.dart frontend/lib/screens/invoices/create_invoice_screen.dart frontend/lib/screens/invoices/invoice_preview_screen.dart frontend/lib/screens/khata/party_ledger_screen.dart frontend/lib/screens/payments/payment_link_screen.dart frontend/lib/screens/payments/vpa_qr_screen.dart frontend/lib/screens/payments/standee_export_modal.dart frontend/lib/screens/voice_ai/voice_assistant_screen.dart frontend/lib/screens/camera/passive_camera_screen.dart frontend/lib/screens/dispatch/daily_dispatch_screen.dart frontend/lib/screens/hardware/office_kit_screen.dart frontend/lib/screens/settings/settings_screen.dart frontend/lib/screens/settings/bank_accounts_screen.dart"
+
+for %%f in (%files%) do (
+    powershell -Command "(Get-Content %%f) -replace 'GoogleFonts.jetbrainsMono', 'GoogleFonts.jetBrainsMono' -replace 'Icons.sync_saved_locally_rounded', 'Icons.cloud_done_rounded' -replace 'Icons.routine_rounded', 'Icons.schedule_rounded' -replace 'shadows:', 'boxShadow:' -replace 'Colors.stone', 'Colors.grey' -replace 'Colors.emerald', 'Colors.green' | Set-Content %%f"
+)

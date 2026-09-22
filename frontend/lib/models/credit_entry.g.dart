@@ -3,6 +3,7 @@
 part of 'credit_entry.dart';
 
 // **************************************************************************
+
 // JsonSerializableGenerator
 // **************************************************************************
 
@@ -15,6 +16,7 @@ CreditEntry _$CreditEntryFromJson(Map<String, dynamic> json) => CreditEntry(
       type: json['type'] as String,
       date: DateTime.parse(json['date'] as String),
       notes: json['notes'] as String?,
+      paidAmount: (json['paidAmount'] as num?)?.toDouble() ?? 0,
       isPaid: json['isPaid'] as bool? ?? false,
       paidAt: json['paidAt'] == null
           ? null
@@ -31,6 +33,7 @@ Map<String, dynamic> _$CreditEntryToJson(CreditEntry instance) =>
       'type': instance.type,
       'date': instance.date.toIso8601String(),
       'notes': instance.notes,
+      'paidAmount': instance.paidAmount,
       'isPaid': instance.isPaid,
       'paidAt': instance.paidAt?.toIso8601String(),
     };

@@ -1,0 +1,3 @@
+@echo off
+powershell -Command "$file1 = 'frontend/lib/screens/dashboard/dashboard_screen.dart'; (Get-Content $file1) -replace \"context.pushNamed\('udhaar'\)\", \"context.pushNamed('party_ledger')\" -replace \"context.pushNamed\('creditScore'\)\", \"context.pushNamed('credit_score')\" | Set-Content $file1"
+powershell -Command "$file2 = 'frontend/lib/services/voice_service.dart'; (Get-Content $file2) -replace \"goNamed\('creditScore'\)\", \"goNamed('credit_score')\" -replace \"goNamed\('invoice'\)\", \"goNamed('create_invoice')\" -replace \"goNamed\('heatmap'\)\", \"goNamed('heatmap')\" -replace \"goNamed\('capture'\)\", \"goNamed('passive_camera')\" | Set-Content $file2"

@@ -8,7 +8,8 @@ import '../services/office_kit_service.dart';
 
 /// Provides singleton instance of LocalApiService.
 /// All API calls go through this for offline-first experience.
-final apiServiceProvider = Provider<LocalApiService>((ref) => LocalApiService());
+final apiServiceProvider =
+    Provider<LocalApiService>((ref) => LocalApiService());
 
 /// Provides singleton instance of CacheService.
 /// Handles local Hive database operations.
@@ -22,7 +23,8 @@ final voiceServiceProvider = Provider<VoiceService>((ref) {
 
 /// Provides singleton instance of OfficeKitService.
 /// iQOO Hackathon 2026 SDK integration.
-final officeKitServiceProvider = Provider<OfficeKitService>((ref) => OfficeKitService());
+final officeKitServiceProvider =
+    Provider<OfficeKitService>((ref) => OfficeKitService());
 
 /// Provides combined app state for quick access.
 /// Use this in widgets that need multiple services.
@@ -51,7 +53,8 @@ class AppServices {
 }
 
 /// Provider for app initialization state.
-final appInitializationProvider = FutureProvider<AppInitializationState>((ref) async {
+final appInitializationProvider =
+    FutureProvider<AppInitializationState>((ref) async {
   final api = ref.watch(apiServiceProvider);
   final cache = ref.watch(cacheServiceProvider);
 
@@ -92,7 +95,8 @@ final offlineModeProvider = Provider<bool>((ref) {
 });
 
 /// Provider for sync status.
-final syncStatusProvider = StateNotifierProvider<SyncStatusNotifier, SyncStatusState>(
+final syncStatusProvider =
+    StateNotifierProvider<SyncStatusNotifier, SyncStatusState>(
   (ref) => SyncStatusNotifier(),
 );
 

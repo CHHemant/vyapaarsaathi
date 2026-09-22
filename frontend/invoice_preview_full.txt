@@ -1,0 +1,515 @@
+﻿// lib/screens/invoices/invoice_preview_screen.dart
+
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../../theme/kirana_colors.dart';
+
+class InvoicePreviewScreen extends ConsumerWidget {
+  const InvoicePreviewScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Scaffold(
+      backgroundColor: KiranaColors.bg,
+      appBar: AppBar(
+        title: Column(
+          children: [
+            Text('MERCHANT ACCESS',
+                style: GoogleFonts.bebasNeue(fontSize: 20, letterSpacing: 1.0)),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                  color: KiranaColors.tertiaryFixed,
+                  borderRadius: BorderRadius.circular(100)),
+              child: Text('â€¢ NIC EWB PORTAL â€¢ GSTN 2.0 SYNCED',
+                  style: GoogleFonts.jetBrainsMono(
+                      fontSize: 8,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.0)),
+            ),
+          ],
+        ),
+        centerTitle: true,
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          _buildManifestHeader(),
+          const SizedBox(height: 16),
+          _buildUpiQrCard(),
+          const SizedBox(height: 16),
+          _buildItemizedLedger(),
+          const SizedBox(height: 16),
+          _buildDispatchActions(),
+          const SizedBox(height: 16),
+          _buildCryptographicSeal(),
+          const SizedBox(height: 40),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildManifestHeader() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+          color: KiranaColors.surfaceContainerLowest,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04), blurRadius: 4)
+          ]),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                      width: 10,
+                      height: 10,
+                      decoration: const BoxDecoration(
+                          color: KiranaColors.secondaryContainer,
+                          shape: BoxShape.circle)),
+                  const SizedBox(width: 8),
+                  Text('PENDING SETTLEMENT',
+                      style: GoogleFonts.jetBrainsMono(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w800,
+                          color: KiranaColors.secondary,
+                          letterSpacing: 1.5)),
+                ],
+              ),
+              Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                      color: KiranaColors.tertiaryFixed,
+                      borderRadius: BorderRadius.circular(100)),
+                  child: Text('E-WAYBILL READY',
+                      style: GoogleFonts.jetBrainsMono(
+                          fontSize: 8, fontWeight: FontWeight.bold))),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text('TAX INVOICE #VS-2024-0892',
+              style: GoogleFonts.bebasNeue(fontSize: 24, letterSpacing: 0.5)),
+          const SizedBox(height: 4),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.storefront_rounded,
+                  size: 18, color: KiranaColors.onSurfaceVariant),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Mehta Traders & Sons',
+                        style: GoogleFonts.plusJakartaSans(
+                            fontSize: 16, fontWeight: FontWeight.bold)),
+                    Text('GSTIN: 36AABCM8921R1ZX â€¢ HYDERABAD TELANGANA',
+                        style: GoogleFonts.jetBrainsMono(
+                            fontSize: 9, color: KiranaColors.onSurfaceVariant)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+                color: KiranaColors.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(8)),
+            child: Row(
+              children: [
+                Expanded(
+                    child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                      Text('Invoice Date',
+                          style: GoogleFonts.jetBrainsMono(
+                              fontSize: 9,
+                              color: KiranaColors.onSurfaceVariant)),
+                      Text('24 OCT 2024, 04:45 PM',
+                          style: GoogleFonts.jetBrainsMono(
+                              fontSize: 10, fontWeight: FontWeight.bold))
+                    ])),
+                Expanded(
+                    child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                      Text('Place of Supply',
+                          style: GoogleFonts.jetBrainsMono(
+                              fontSize: 9,
+                              color: KiranaColors.onSurfaceVariant)),
+                      Text('36 - TELANGANA (INTRA)',
+                          style: GoogleFonts.jetBrainsMono(
+                              fontSize: 10, fontWeight: FontWeight.bold))
+                    ])),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUpiQrCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+          color: KiranaColors.surfaceContainerHigh,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04), blurRadius: 4)
+          ]),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(children: [
+                const Icon(Icons.qr_code_scanner_rounded,
+                    size: 22, color: KiranaColors.secondary),
+                const SizedBox(width: 8),
+                Text('BHARAT DYNAMIC UPI QR',
+                    style: GoogleFonts.bebasNeue(fontSize: 20))
+              ]),
+              Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                      color: KiranaColors.surfaceContainer,
+                      borderRadius: BorderRadius.circular(100)),
+                  child: Text('SOUNDBOX SYNCED',
+                      style: GoogleFonts.jetBrainsMono(
+                          fontSize: 8, fontWeight: FontWeight.bold))),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+                color: KiranaColors.surfaceContainerLowest,
+                borderRadius: BorderRadius.circular(12)),
+            child: Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                      color: KiranaColors.primary,
+                      borderRadius: BorderRadius.circular(8)),
+                  child: Image.network(
+                      'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=upi://pay?pa=vyapaar.ramesh@icici&pn=VyapaarSaathi&am=14850.00&cu=INR&tn=VS-2024-0892',
+                      width: 140,
+                      height: 140,
+                      color: Colors.white),
+                ),
+                const SizedBox(height: 16),
+                Text('PAY â‚¹14,850.00',
+                    style: GoogleFonts.bebasNeue(fontSize: 28)),
+                Text('VPA: vyapaar.ramesh@icici',
+                    style: GoogleFonts.jetBrainsMono(
+                        fontSize: 10,
+                        color: KiranaColors.onSurfaceVariant,
+                        fontWeight: FontWeight.bold)),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                  child:
+                      _buildQrAction(Icons.content_copy_rounded, 'COPY VPA')),
+              const SizedBox(width: 8),
+              Expanded(
+                  child: _buildQrAction(
+                      Icons.open_in_new_rounded, 'OPEN UPI APP',
+                      isPrimary: true)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQrAction(IconData icon, String label, {bool isPrimary = false}) {
+    return Container(
+      height: 40,
+      decoration: BoxDecoration(
+          color:
+              isPrimary ? KiranaColors.primary : KiranaColors.surfaceContainer,
+          borderRadius: BorderRadius.circular(8)),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon,
+              size: 16,
+              color: isPrimary ? Colors.white : KiranaColors.onSurface),
+          const SizedBox(width: 6),
+          Text(label,
+              style: GoogleFonts.jetBrainsMono(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: isPrimary ? Colors.white : KiranaColors.onSurface)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildItemizedLedger() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+          color: KiranaColors.surfaceContainerLowest,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04), blurRadius: 4)
+          ]),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('ITEMIZED PARTICULARS',
+              style: GoogleFonts.bebasNeue(fontSize: 20, letterSpacing: 1.0)),
+          const SizedBox(height: 12),
+          _buildLedgerItem('Basmati Rice Royal (Grain A)', 'HSN 1006.30.20',
+              '5 Qntl @ â‚¹2,400', 12000, 5),
+          const SizedBox(height: 8),
+          _buildLedgerItem('Refined Sunflower Oil Cans', 'HSN 1512.19.10',
+              '10 Cans @ â‚¹1,200', 12000, 12),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+                color: KiranaColors.surfaceContainerHigh,
+                borderRadius: BorderRadius.circular(8)),
+            child: Column(
+              children: [
+                _buildSummaryRow('TAXABLE VALUE', 12583.06),
+                _buildSummaryRow('CGST (9.00%)', 1133.47),
+                _buildSummaryRow('SGST (9.00%)', 1133.47),
+                const Divider(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('GRAND TOTAL',
+                        style: GoogleFonts.bebasNeue(fontSize: 24)),
+                    Text('â‚¹14,850.00',
+                        style: GoogleFonts.bebasNeue(
+                            fontSize: 28,
+                            color: KiranaColors.secondaryContainer)),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLedgerItem(
+      String name, String hsn, String qty, double total, int gst) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+          color: KiranaColors.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(8)),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(name,
+                    style: GoogleFonts.plusJakartaSans(
+                        fontSize: 13, fontWeight: FontWeight.bold),
+                    overflow: TextOverflow.ellipsis),
+                Row(children: [
+                  Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 1),
+                      decoration: BoxDecoration(
+                          color: KiranaColors.surfaceContainerHigh,
+                          borderRadius: BorderRadius.circular(4)),
+                      child: Text(hsn,
+                          style: GoogleFonts.jetBrainsMono(fontSize: 8))),
+                  const SizedBox(width: 8),
+                  Text(qty,
+                      style: GoogleFonts.jetBrainsMono(
+                          fontSize: 9, color: KiranaColors.onSurfaceVariant))
+                ]),
+              ],
+            ),
+          ),
+          Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+            Text('â‚¹${total.toStringAsFixed(2)}',
+                style: GoogleFonts.jetBrainsMono(
+                    fontSize: 12, fontWeight: FontWeight.bold)),
+            Text('+$gst% GST',
+                style: GoogleFonts.jetBrainsMono(
+                    fontSize: 9, color: KiranaColors.onSurfaceVariant))
+          ]),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryRow(String label, double val) {
+    return Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+      Text(label,
+          style: GoogleFonts.jetBrainsMono(
+              fontSize: 9, color: KiranaColors.onSurfaceVariant)),
+      Text('â‚¹${val.toStringAsFixed(2)}',
+          style: GoogleFonts.jetBrainsMono(
+              fontSize: 10, fontWeight: FontWeight.bold))
+    ]);
+  }
+
+  Widget _buildDispatchActions() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+          color: KiranaColors.surfaceContainerLowest,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04), blurRadius: 4)
+          ]),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('OPERATIONAL DISPATCH',
+              style: GoogleFonts.bebasNeue(fontSize: 20, letterSpacing: 1.0)),
+          const SizedBox(height: 12),
+          _buildDispatchButton(Icons.send_rounded, '1-Tap WhatsApp Bill',
+              'Signed PDF + Direct Pay Deep Link',
+              isSecondary: true),
+          const SizedBox(height: 8),
+          _buildDispatchButton(Icons.bluetooth_searching_rounded,
+              'Print Thermal Slip', '2-inch & 3-inch ESC/POS Auto Connect'),
+          const SizedBox(height: 16),
+          Container(
+            height: 56,
+            width: double.infinity,
+            decoration: BoxDecoration(
+                color: KiranaColors.primary,
+                borderRadius: BorderRadius.circular(12)),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.payments_rounded,
+                    color: Colors.white, size: 20),
+                const SizedBox(width: 10),
+                Text('COLLECT CASH & MARK PAID â†’',
+                    style: GoogleFonts.bebasNeue(
+                        fontSize: 20, color: Colors.white, letterSpacing: 1.0)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDispatchButton(IconData icon, String title, String subtitle,
+      {bool isSecondary = false}) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+          color: KiranaColors.surfaceContainer,
+          borderRadius: BorderRadius.circular(12)),
+      child: Row(
+        children: [
+          Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                  color: isSecondary
+                      ? KiranaColors.tertiaryFixed
+                      : KiranaColors.surfaceContainerLowest,
+                  shape: BoxShape.circle),
+              child: Icon(icon,
+                  size: 16,
+                  color: isSecondary
+                      ? KiranaColors.onTertiaryContainer
+                      : KiranaColors.onSurface)),
+          const SizedBox(width: 12),
+          Expanded(
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                Text(title,
+                    style: GoogleFonts.plusJakartaSans(
+                        fontSize: 14, fontWeight: FontWeight.bold)),
+                Text(subtitle,
+                    style: GoogleFonts.jetBrainsMono(
+                        fontSize: 8, color: KiranaColors.onSurfaceVariant))
+              ])),
+          const Icon(Icons.chevron_right_rounded,
+              size: 20, color: KiranaColors.onSurfaceVariant),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCryptographicSeal() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+          color: KiranaColors.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(16)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            const Icon(Icons.verified_user_rounded,
+                size: 16, color: KiranaColors.onTertiaryContainer),
+            const SizedBox(width: 8),
+            Text('STATUTORY AUDIT LOG & TAX SIGNATURE',
+                style: GoogleFonts.jetBrainsMono(
+                    fontSize: 9, fontWeight: FontWeight.bold))
+          ]),
+          const SizedBox(height: 8),
+          Text('IRN: 7b84cf2990aa18e38d998274a7b8e19273cba9e2101',
+              style: GoogleFonts.jetBrainsMono(
+                  fontSize: 8, color: KiranaColors.onSurfaceVariant)),
+          Text('ACK NO: 142410982341 â€¢ TIME: 2024-10-24T16:45:12+05:30',
+              style: GoogleFonts.jetBrainsMono(
+                  fontSize: 8, color: KiranaColors.onSurfaceVariant)),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            children: [
+              _buildSealTag('â€¢ GSTN 2.0 COMPLIANT'),
+              _buildSealTag('â€¢ NPCI BHIM 2.0 READY'),
+              _buildSealTag('â€¢ CRYPTOGRAPHICALLY SIGNED'),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSealTag(String label) {
+    return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        decoration: BoxDecoration(
+            color: KiranaColors.surfaceContainer,
+            borderRadius: BorderRadius.circular(4)),
+        child: Text(label,
+            style: GoogleFonts.jetBrainsMono(
+                fontSize: 8, fontWeight: FontWeight.bold)));
+  }
+}
+

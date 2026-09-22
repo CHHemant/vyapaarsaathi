@@ -56,14 +56,15 @@ class MilestoneBadgeWidget extends StatelessWidget {
     }
 
     return KiranaCard(
-      color: KiranaColors.tertiary.withOpacity(0.05),
-      borderColor: KiranaColors.tertiary.withOpacity(0.2),
+      color: KiranaColors.tertiary.withValues(alpha: 0.05),
+      borderColor: KiranaColors.tertiary.withValues(alpha: 0.2),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.emoji_events_rounded, color: KiranaColors.tertiary, size: 24),
+              const Icon(Icons.emoji_events_rounded,
+                  color: KiranaColors.tertiary, size: 24),
               const SizedBox(width: 12),
               Text(
                 'Achievements',
@@ -115,12 +116,13 @@ class _BadgeChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
-        border: Border.all(color: badge.color.withOpacity(0.2), width: 1.5),
+        border:
+            Border.all(color: badge.color.withValues(alpha: 0.2), width: 1.5),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -145,7 +147,7 @@ class _BadgeChip extends StatelessWidget {
                   fontFamily: 'Quicksand',
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
-                  color: theme.colorScheme.onSurface.withOpacity(0.5),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                 ),
               ),
             ],

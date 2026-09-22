@@ -41,7 +41,7 @@ class DailySummaryWidget extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -70,7 +70,7 @@ class DailySummaryWidget extends StatelessWidget {
                       style: TextStyle(
                         fontFamily: 'NotoSans',
                         fontSize: 12,
-                        color: Colors.white.withOpacity(0.8),
+                        color: Colors.white.withValues(alpha: 0.8),
                       ),
                     ),
                   ],
@@ -78,7 +78,8 @@ class DailySummaryWidget extends StatelessWidget {
               ),
               IconButton(
                 icon: const Icon(Icons.share, color: Colors.white),
-                onPressed: () => _shareSummary(context, totalSales, totalExpenses, netProfit, transactionCount),
+                onPressed: () => _shareSummary(context, totalSales,
+                    totalExpenses, netProfit, transactionCount),
               ),
             ],
           ),
@@ -173,17 +174,18 @@ class DailySummaryWidget extends StatelessWidget {
     HapticFeedback.lightImpact();
 
     final message = '''
-📊 *Daily Summary - ${DateFormat('dd MMM').format(date)}*
+ðŸ“Š *Daily Summary - ${DateFormat('dd MMM').format(date)}*
 
-💰 Sales: ₹${sales.toStringAsFixed(0)}
-💸 Expenses: ₹${expenses.toStringAsFixed(0)}
-📈 Net: ₹${net.toStringAsFixed(0)}
-🧾 Transactions: $count
+ðŸ’° Sales: â‚¹${sales.toStringAsFixed(0)}
+ðŸ’¸ Expenses: â‚¹${expenses.toStringAsFixed(0)}
+ðŸ“ˆ Net: â‚¹${net.toStringAsFixed(0)}
+ðŸ§¾ Transactions: $count
 
 Powered by VyapaarSaathi
-    '''.trim();
+    '''
+        .trim();
 
-    await Share.share(message);
+    await SharePlus.instance.share(ShareParams(text: message));
 
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -216,7 +218,9 @@ class _StatBox extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isPrimary ? Colors.white.withOpacity(0.2) : Colors.white.withOpacity(0.1),
+        color: isPrimary
+            ? Colors.white.withValues(alpha: 0.2)
+            : Colors.white.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -233,7 +237,7 @@ class _StatBox extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            '₹${amount.toStringAsFixed(0)}',
+            'â‚¹${amount.toStringAsFixed(0)}',
             style: TextStyle(
               fontFamily: 'RobotoMono',
               fontWeight: FontWeight.bold,

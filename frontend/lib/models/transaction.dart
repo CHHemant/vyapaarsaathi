@@ -1,6 +1,6 @@
 // frontend/lib/models/transaction.dart
 
-/// Category of a captured transaction. Matches backend's category enum.
+/// Category of a captured transaction.
 enum TransactionCategory {
   groceries,
   vegetables,
@@ -9,7 +9,7 @@ enum TransactionCategory {
   expense,
   other;
 
-  /// Emoji shown on TransactionTile
+  /// Emoji shown for the transaction category.
   String get emoji => switch (this) {
         TransactionCategory.groceries => '🛒',
         TransactionCategory.vegetables => '🥬',
@@ -21,13 +21,13 @@ enum TransactionCategory {
 
   static TransactionCategory fromBackendString(String value) {
     return TransactionCategory.values.firstWhere(
-      (c) => c.name == value.toLowerCase(),
+      (category) => category.name == value.toLowerCase(),
       orElse: () => TransactionCategory.other,
     );
   }
 }
 
-/// A single captured transaction (UPI or cash)
+/// A single captured transaction.
 class Transaction {
   final String id;
   final double amount;
@@ -64,50 +64,76 @@ class Transaction {
     );
   }
 
-  Map<String, dynamic> toJson() => {
-        'id': id,
-        'amount': amount,
-        'category': category.name,
-        'timestamp': timestamp.toIso8601String(),
-        'confidence': confidence,
-        'customer_name': customerName,
-        'customer_id': customerId,
-        'is_synced': isSynced,
-      };
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'amount': amount,
+      'category': category.name,
+      'timestamp': timestamp.toIso8601String(),
+      'confidence': confidence,
+      'customer_name': customerName,
+      'customer_id': customerId,
+      'is_synced': isSynced,
+    };
+  }
 
-  Transaction copyWith({bool? isSynced}) => Transaction(
-        id: id,
-        amount: amount,
-        category: category,
-        timestamp: timestamp,
-        confidence: confidence,
-        customerName: customerName,
-        customerId: customerId,
-        isSynced: isSynced ?? this.isSynced,
-      );
+  Transaction copyWith({
+    bool? isSynced,
+  }) {
+    return Transaction(
+      id: id,
+      amount: amount,
+      category: category,
+      timestamp: timestamp,
+      confidence: confidence,
+      customerName: customerName,
+      customerId: customerId,
+      isSynced: isSynced ?? this.isSynced,
+    );
+  }
 }
 
-/// Response from POST /transactions/capture
+/// Response from POST /transactions/capture.
 sealed class TransactionCaptureResponse {
   const TransactionCaptureResponse();
 
-  factory TransactionCaptureResponse.fromJson(Map<String, dynamic> json) {
+  factory TransactionCaptureResponse.fromJson(
+    Map<String, dynamic> json,
+  ) {
     final confidence = (json['confidence'] as num?)?.toInt() ?? 0;
-    final transaction = Transaction.fromJson(json['transaction'] as Map<String, dynamic>);
+
+    final transaction = Transaction.fromJson(
+      json['transaction'] as Map<String, dynamic>,
+    );
+
     return confidence < 70
-        ? LowConfidenceCapture(transaction: transaction, confidence: confidence)
-        : ConfirmedCapture(transaction: transaction, confidence: confidence);
+        ? LowConfidenceCapture(
+            transaction: transaction,
+            confidence: confidence,
+          )
+        : ConfirmedCapture(
+            transaction: transaction,
+            confidence: confidence,
+          );
   }
 }
 
 class ConfirmedCapture extends TransactionCaptureResponse {
   final Transaction transaction;
   final int confidence;
-  const ConfirmedCapture({required this.transaction, required this.confidence});
+
+  const ConfirmedCapture({
+    required this.transaction,
+    required this.confidence,
+  });
 }
 
 class LowConfidenceCapture extends TransactionCaptureResponse {
   final Transaction transaction;
   final int confidence;
-  const LowConfidenceCapture({required this.transaction, required this.confidence});
+
+  const LowConfidenceCapture({
+    required this.transaction,
+    required this.confidence,
+  });
 }

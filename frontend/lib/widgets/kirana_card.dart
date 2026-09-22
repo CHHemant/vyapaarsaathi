@@ -1,11 +1,10 @@
 // frontend/lib/widgets/kirana_card.dart
 
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../theme/kirana_colors.dart';
 
-/// A realistic premium card with subtle glassmorphic effects, 
-/// soft multi-layered shadows, and smooth interactions.
+/// A sleek, tactile card based on the True Master Dashboard design.
+/// Features subtle borders and light shadows for a professional fintech feel.
 class KiranaCard extends StatefulWidget {
   final Widget child;
   final EdgeInsetsGeometry padding;
@@ -16,7 +15,6 @@ class KiranaCard extends StatefulWidget {
   final VoidCallback? onTap;
   final double elevation;
   final double borderRadius;
-  final bool useGlass;
 
   const KiranaCard({
     super.key,
@@ -27,9 +25,8 @@ class KiranaCard extends StatefulWidget {
     this.borderColor,
     this.borderWidth,
     this.onTap,
-    this.elevation = 4,
-    this.borderRadius = 20,
-    this.useGlass = false,
+    this.elevation = 2,
+    this.borderRadius = 16,
   });
 
   @override
@@ -37,63 +34,52 @@ class KiranaCard extends StatefulWidget {
 }
 
 class _KiranaCardState extends State<KiranaCard> {
-  bool _isHovered = false;
+  bool _isPressed = false;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-    final baseColor = widget.color ?? (isDark ? KiranaColors.surfaceDark : KiranaColors.surfaceLight);
-    final shadowColor = isDark ? Colors.black.withOpacity(0.5) : Colors.indigo.withOpacity(0.08);
 
-    Widget content = Padding(
-      padding: widget.padding,
-      child: widget.child,
-    );
-
-    if (widget.useGlass) {
-      content = ClipRRect(
-        borderRadius: BorderRadius.circular(widget.borderRadius),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: content,
-        ),
-      );
-    }
+    final baseColor = widget.color ??
+        (isDark
+            ? KiranaColors.surfaceContainer
+            : KiranaColors.surfaceContainerLowest);
+    final borderColor = widget.borderColor ??
+        KiranaColors.outlineVariant.withValues(alpha: 0.2);
 
     return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        margin: widget.margin,
-        curve: Curves.easeOutCubic,
-        transform: Matrix4.identity()..translate(0.0, _isHovered ? -2.0 : 0.0),
-        decoration: BoxDecoration(
-          color: widget.useGlass 
-              ? (isDark ? Colors.white.withOpacity(0.05) : Colors.white.withOpacity(0.7))
-              : baseColor,
-          borderRadius: BorderRadius.circular(widget.borderRadius),
-          border: Border.all(
-            color: widget.borderColor ?? (isDark ? Colors.white10 : Colors.indigo.withOpacity(0.05)),
-            width: widget.borderWidth ?? 1.5,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: shadowColor,
-              blurRadius: _isHovered ? 20 : 12,
-              offset: Offset(0, _isHovered ? 8 : 4),
-            ),
-          ],
-        ),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: widget.onTap,
+      cursor: widget.onTap != null
+          ? SystemMouseCursors.click
+          : SystemMouseCursors.basic,
+      child: GestureDetector(
+        onTapDown: (_) => setState(() => _isPressed = true),
+        onTapUp: (_) => setState(() => _isPressed = false),
+        onTapCancel: () => setState(() => _isPressed = false),
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 100),
+          margin: widget.margin,
+          curve: Curves.easeInOut,
+          transform: Matrix4.identity()
+            ..scaleByDouble(_isPressed ? 0.98 : 1.0, 1.0, 1.0, 1.0),
+          decoration: BoxDecoration(
+            color: baseColor,
             borderRadius: BorderRadius.circular(widget.borderRadius),
-            splashColor: KiranaColors.primary.withOpacity(0.1),
-            highlightColor: Colors.transparent,
-            child: content,
+            border: Border.all(
+              color: borderColor,
+              width: widget.borderWidth ?? 1.0,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: widget.elevation * 2,
+                offset: Offset(0, widget.elevation / 2),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: widget.padding,
+            child: widget.child,
           ),
         ),
       ),

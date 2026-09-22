@@ -1,0 +1,1027 @@
+// lib/screens/invoices/create_invoice_screen.dart
+
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
+
+import '../../models/invoice.dart';
+import '../../providers/invoices/invoice_provider.dart';
+import '../../theme/kirana_colors.dart';
+
+class CreateInvoiceScreen extends ConsumerStatefulWidget {
+  const CreateInvoiceScreen({super.key});
+
+  @override
+  ConsumerState<CreateInvoiceScreen> createState() =>
+      _CreateInvoiceScreenState();
+}
+
+class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
+  final _gstinController = TextEditingController(
+    text: '27AABCS1429B1Z8',
+  );
+
+  bool _autoEway = true;
+  bool _isSaving = false;
+
+  @override
+  void dispose() {
+    _gstinController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _generateInvoice() async {
+    if (_isSaving) return;
+
+    setState(() {
+      _isSaving = true;
+    });
+
+    final invoice = Invoice(
+      customerId: _gstinController.text.trim(),
+      customerName: 'Shree Ganesh Logistics (P) Ltd',
+      items: const [
+        InvoiceItem(
+          id: 'cement-001',
+          name: 'Industrial Portland Cement (50kg)',
+          quantity: 100,
+          unitPrice: 380,
+          gstRate: GstRate.twentyEight,
+        ),
+        InvoiceItem(
+          id: 'freight-001',
+          name: 'Freight & Transport Service',
+          quantity: 1,
+          unitPrice: 12500,
+          gstRate: GstRate.eighteen,
+        ),
+      ],
+    );
+
+    try {
+      await ref.read(invoiceProvider.notifier).saveInvoice(invoice);
+
+      if (!mounted) return;
+
+      context.pushNamed('invoice_preview');
+    } catch (error) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Unable to save invoice: $error'),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: KiranaColors.bg,
+      appBar: AppBar(
+        title: Column(
+          children: [
+            Text(
+              'BILL GENERATOR',
+              style: GoogleFonts.bebasNeue(
+                fontSize: 20,
+                letterSpacing: 1.0,
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 8,
+                vertical: 2,
+              ),
+              decoration: BoxDecoration(
+                color: KiranaColors.tertiaryFixed,
+                borderRadius: BorderRadius.circular(100),
+              ),
+              child: Text(
+                '• NIC EWB PORTAL • GSTN 2.0 SYNCED',
+                style: GoogleFonts.jetBrainsMono(
+                  fontSize: 8,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.0,
+                ),
+              ),
+            ),
+          ],
+        ),
+        centerTitle: true,
+      ),
+      body: Stack(
+        children: [
+          ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              _buildHeroTitle(),
+              const SizedBox(height: 24),
+              _buildVoicePrompt(),
+              const SizedBox(height: 24),
+              _buildCustomerCard(),
+              const SizedBox(height: 24),
+              _buildLineItemsSection(),
+              const SizedBox(height: 24),
+              _buildTaxBentoCard(),
+              const SizedBox(height: 24),
+              _buildAiBadge(),
+              const SizedBox(height: 120),
+            ],
+          ),
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: _buildBottomDock(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeroTitle() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'NEW B2B',
+          style: GoogleFonts.bebasNeue(
+            fontSize: 48,
+            height: 0.9,
+          ),
+        ),
+        Text(
+          'E-INVOICE',
+          style: GoogleFonts.bebasNeue(
+            fontSize: 48,
+            height: 0.9,
+            color: KiranaColors.secondaryContainer,
+          ),
+        ),
+        Text(
+          'GENERATOR',
+          style: GoogleFonts.bebasNeue(
+            fontSize: 48,
+            height: 0.9,
+          ),
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            _buildTogglePill(
+              '● B2B Regular',
+              isActive: true,
+            ),
+            const SizedBox(width: 8),
+            _buildTogglePill('Export / SEZ'),
+            const SizedBox(width: 8),
+            _buildTogglePill('B2C Large'),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTogglePill(
+    String label, {
+    bool isActive = false,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 12,
+        vertical: 6,
+      ),
+      decoration: BoxDecoration(
+        color: isActive ? KiranaColors.primary : Colors.transparent,
+        borderRadius: BorderRadius.circular(100),
+        border: Border.all(
+          color: isActive
+              ? KiranaColors.primary
+              : KiranaColors.onSurfaceVariant.withValues(
+                  alpha: 0.3,
+                ),
+        ),
+      ),
+      child: Text(
+        label.toUpperCase(),
+        style: GoogleFonts.jetBrainsMono(
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+          color: isActive
+              ? Colors.white
+              : KiranaColors.onSurfaceVariant,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildVoicePrompt() {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade200.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.grey.shade300,
+        ),
+      ),
+      child: Row(
+        children: [
+          const Text(
+            '🎙️',
+            style: TextStyle(fontSize: 16),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: RichText(
+              text: TextSpan(
+                style: GoogleFonts.jetBrainsMono(
+                  fontSize: 11,
+                  color: Colors.black87,
+                ),
+                children: const [
+                  TextSpan(
+                    text: 'AI Whisper: ',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  TextSpan(
+                    text: '"Bill to Ganesh Logistics 100 Bags..."',
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 8,
+              vertical: 2,
+            ),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(
+                color: Colors.grey.shade300,
+              ),
+            ),
+            child: Text(
+              'SYNC',
+              style: GoogleFonts.jetBrainsMono(
+                fontSize: 9,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCustomerCard() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: Colors.grey.shade300,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'BUYER DETAILS',
+                style: GoogleFonts.jetBrainsMono(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: KiranaColors.onSurfaceVariant,
+                  letterSpacing: 1.2,
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 2,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(
+                    color: Colors.red.shade100,
+                  ),
+                ),
+                child: Text(
+                  '⚡ AUTO-FETCH GSTIN',
+                  style: GoogleFonts.jetBrainsMono(
+                    fontSize: 9,
+                    fontWeight: FontWeight.bold,
+                    color: KiranaColors.secondary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: KiranaColors.bg,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Colors.grey.shade300.withValues(
+                  alpha: 0.5,
+                ),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'RECIPIENT GSTIN',
+                      style: GoogleFonts.jetBrainsMono(
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold,
+                        color: KiranaColors.onSurfaceVariant,
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 1,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade50,
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(
+                          color: Colors.green.shade200,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          const CircleAvatar(
+                            radius: 3,
+                            backgroundColor: Colors.green,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            'NIC VERIFIED',
+                            style: GoogleFonts.jetBrainsMono(
+                              fontSize: 8,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green.shade800,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      _gstinController.text,
+                      style: GoogleFonts.jetBrainsMono(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+                    const Icon(
+                      Icons.check_circle_rounded,
+                      color: Colors.green,
+                      size: 18,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Trade Legal Name',
+            style: GoogleFonts.jetBrainsMono(
+              fontSize: 9,
+              color: Colors.grey.shade400,
+            ),
+          ),
+          Text(
+            'Shree Ganesh Logistics (P) Ltd',
+            style: GoogleFonts.plusJakartaSans(
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
+          ),
+          const SizedBox(height: 12),
+          const Divider(height: 1),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Place of Supply',
+                    style: GoogleFonts.jetBrainsMono(
+                      fontSize: 9,
+                      color: Colors.grey.shade400,
+                    ),
+                  ),
+                  Text(
+                    '27 - Maharashtra',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    'Tax Type',
+                    style: GoogleFonts.jetBrainsMono(
+                      fontSize: 9,
+                      color: Colors.grey.shade400,
+                    ),
+                  ),
+                  Text(
+                    'INTRA-STATE (CGST+SGST)',
+                    style: GoogleFonts.jetBrainsMono(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLineItemsSection() {
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Text(
+                  'INVOICE ITEMS',
+                  style: GoogleFonts.bebasNeue(
+                    fontSize: 24,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '(02)',
+                  style: GoogleFonts.jetBrainsMono(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey.shade500,
+                  ),
+                ),
+              ],
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 6,
+              ),
+              decoration: BoxDecoration(
+                color: KiranaColors.primary,
+                borderRadius: BorderRadius.circular(100),
+              ),
+              child: Text(
+                '+ ADD ITEM',
+                style: GoogleFonts.jetBrainsMono(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        _buildItemRow(
+          'Industrial Portland Cement (50kg)',
+          '25232910',
+          '100 Bags × ₹380',
+          '₹38,000.00',
+          'GST (28%)',
+        ),
+        const SizedBox(height: 12),
+        _buildItemRow(
+          'Freight & Transport Service',
+          '996511',
+          '1 Trip × ₹12,500',
+          '₹12,500.00',
+          'GST (18%)',
+        ),
+      ],
+    );
+  }
+
+  Widget _buildItemRow(
+    String title,
+    String hsn,
+    String qtyRate,
+    String total,
+    String gst,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: Colors.grey.shade300,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'HSN/SAC: $hsn',
+                    style: GoogleFonts.jetBrainsMono(
+                      fontSize: 9,
+                      color: Colors.grey.shade400,
+                    ),
+                  ),
+                  Text(
+                    title,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              const Icon(
+                Icons.delete_outline_rounded,
+                size: 18,
+                color: Colors.grey,
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: KiranaColors.bg.withValues(alpha: 0.7),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'QTY × RATE',
+                      style: GoogleFonts.jetBrainsMono(
+                        fontSize: 9,
+                        color: Colors.grey.shade500,
+                      ),
+                    ),
+                    Text(
+                      qtyRate,
+                      style: GoogleFonts.jetBrainsMono(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      gst,
+                      style: GoogleFonts.jetBrainsMono(
+                        fontSize: 9,
+                        color: Colors.grey.shade500,
+                      ),
+                    ),
+                    Text(
+                      total,
+                      style: GoogleFonts.jetBrainsMono(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTaxBentoCard() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: KiranaColors.tertiaryContainer,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: const Color(0xFF91B5A3),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'TAX BREAKDOWN & GSTR-1',
+                style: GoogleFonts.jetBrainsMono(
+                  fontSize: 9,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87.withValues(alpha: 0.7),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 2,
+                ),
+                decoration: BoxDecoration(
+                  color: KiranaColors.primary,
+                  borderRadius: BorderRadius.circular(100),
+                ),
+                child: Text(
+                  '2B COMPLIANT',
+                  style: GoogleFonts.jetBrainsMono(
+                    fontSize: 8,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _buildSummaryRow(
+            'Taxable Value:',
+            '₹50,500.00',
+          ),
+          _buildSummaryRow(
+            'CGST (9% + 14%):',
+            '₹6,445.00',
+          ),
+          _buildSummaryRow(
+            'SGST (9% + 14%):',
+            '₹6,445.00',
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 8),
+            child: Divider(
+              height: 1,
+              color: Colors.black12,
+            ),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'NET PAYABLE AMOUNT',
+                    style: GoogleFonts.jetBrainsMono(
+                      fontSize: 9,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black54,
+                    ),
+                  ),
+                  Text(
+                    '₹63,390',
+                    style: GoogleFonts.bebasNeue(
+                      fontSize: 40,
+                    ),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 2,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade200.withValues(alpha: 0.7),
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(
+                    color: Colors.green.shade400,
+                  ),
+                ),
+                child: Text(
+                  'TCS NIL',
+                  style: GoogleFonts.jetBrainsMono(
+                    fontSize: 9,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green.shade900,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          const Divider(
+            height: 1,
+            color: Colors.black12,
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Auto-Generate e-Way Bill',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    'Distance > 50km • Auto Inter-State',
+                    style: GoogleFonts.jetBrainsMono(
+                      fontSize: 8,
+                      color: Colors.black54,
+                    ),
+                  ),
+                ],
+              ),
+              Switch(
+                value: _autoEway,
+                onChanged: (value) {
+                  setState(() {
+                    _autoEway = value;
+                  });
+                },
+                activeThumbColor: KiranaColors.primary,
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 8,
+            ),
+            decoration: BoxDecoration(
+              color: Colors.black12,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'VEHICLE NO:',
+                  style: GoogleFonts.jetBrainsMono(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black54,
+                  ),
+                ),
+                Text(
+                  'MH-12-QW-4920',
+                  style: GoogleFonts.jetBrainsMono(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryRow(
+    String label,
+    String value,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: GoogleFonts.jetBrainsMono(
+              fontSize: 11,
+              color: Colors.black54,
+            ),
+          ),
+          Text(
+            value,
+            style: GoogleFonts.jetBrainsMono(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAiBadge() {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF18181B),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 28,
+            height: 28,
+            decoration: const BoxDecoration(
+              color: KiranaColors.secondaryContainer,
+              shape: BoxShape.circle,
+            ),
+            child: const Center(
+              child: Text(
+                '✻',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'ON-DEVICE SLM AUDIT',
+                  style: GoogleFonts.jetBrainsMono(
+                    fontSize: 9,
+                    color: KiranaColors.secondaryContainer,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.0,
+                  ),
+                ),
+                Text(
+                  '0 HSN Errors • 100% GSTR-2B Matched',
+                  style: GoogleFonts.jetBrainsMono(
+                    fontSize: 10,
+                    color: Colors.white70,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBottomDock() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: KiranaColors.bg.withValues(alpha: 0.95),
+        border: const Border(
+          top: BorderSide(
+            color: Colors.black12,
+          ),
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  border: Border.all(
+                    color: Colors.black12,
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Icon(
+                  Icons.send_rounded,
+                  color: Colors.green,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: GestureDetector(
+                  onTap: _isSaving ? null : _generateInvoice,
+                  child: Container(
+                    height: 56,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                    ),
+                    decoration: BoxDecoration(
+                      color: KiranaColors.primary,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              _isSaving
+                                  ? 'SAVING INVOICE...'
+                                  : 'GENERATE IRN & SIGN',
+                              style: GoogleFonts.bebasNeue(
+                                fontSize: 20,
+                                color: Colors.white,
+                                letterSpacing: 1.0,
+                              ),
+                            ),
+                            Text(
+                              'NIC GSP SERVER INSTANT DISPATCH',
+                              style: GoogleFonts.jetBrainsMono(
+                                fontSize: 8,
+                                color: Colors.white70,
+                              ),
+                            ),
+                          ],
+                        ),
+                        _isSaving
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor:
+                                      AlwaysStoppedAnimation<Color>(
+                                    Colors.white,
+                                  ),
+                                ),
+                              )
+                            : const Icon(
+                                Icons.arrow_forward_rounded,
+                                color: Colors.white,
+                              ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'GSTN LICENSED GSP • NIC E-WAY BILL PORTAL',
+            style: GoogleFonts.jetBrainsMono(
+              fontSize: 8,
+              color: Colors.black38,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

@@ -1,0 +1,60 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../models/invoice.dart';
+import '../../services/invoice_service.dart';
+
+final invoiceServiceProvider = Provider<InvoiceService>((ref) {
+  return InvoiceService();
+});
+
+final invoiceProvider =
+    AsyncNotifierProvider<InvoiceNotifier, List<Invoice>>(
+  InvoiceNotifier.new,
+);
+
+class InvoiceNotifier extends AsyncNotifier<List<Invoice>> {
+  @override
+  Future<List<Invoice>> build() async {
+    final service = ref.read(invoiceServiceProvider);
+
+    return service.getInvoices();
+  }
+
+  /// Saves an invoice and refreshes the provider.
+  Future<void> saveInvoice(Invoice invoice) async {
+    final service = ref.read(invoiceServiceProvider);
+
+    await service.saveInvoice(invoice);
+
+    state = AsyncData(
+      await service.getInvoices(),
+    );
+  }
+
+  /// Reloads invoices from local Hive storage.
+  Future<void> refreshInvoices() async {
+    final service = ref.read(invoiceServiceProvider);
+
+    state = const AsyncLoading();
+
+    try {
+      final invoices = await service.getInvoices();
+
+      state = AsyncData(invoices);
+    } catch (error, stackTrace) {
+      state = AsyncError(
+        error,
+        stackTrace,
+      );
+    }
+  }
+
+  /// Deletes all locally stored invoices.
+  Future<void> clearInvoices() async {
+    final service = ref.read(invoiceServiceProvider);
+
+    await service.clearInvoices();
+
+    state = const AsyncData([]);
+  }
+}

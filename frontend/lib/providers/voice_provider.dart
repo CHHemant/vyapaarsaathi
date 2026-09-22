@@ -1,67 +1,58 @@
-// frontend/lib/providers/voice_provider.dart
+﻿// frontend/lib/providers/voice_provider.dart
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../services/local_api_service.dart';
 import '../services/voice_service.dart';
 
-/// Provides a singleton instance of VoiceService across the app.
-/// 
-/// Usage:
-/// ```dart
-/// final voiceService = ref.read(voiceServiceProvider);
-/// await voiceService.playGreeting();
-/// ```
-final voiceServiceProvider = Provider<VoiceService>((ref) {
-  return VoiceService();
+/// Provides a singleton instance of LocalApiService.
+final localApiServiceProvider = Provider<LocalApiService>((ref) {
+  return LocalApiService();
 });
 
-/// Provider that exposes the current listening state for UI updates.
-/// 
-/// Returns true when voice recognition is actively listening.
+/// Provides a singleton instance of VoiceService across the app.
+final voiceServiceProvider = Provider<VoiceService>((ref) {
+  final apiService = ref.read(localApiServiceProvider);
+
+  return VoiceService(
+    apiService: apiService,
+  );
+});
+
+/// Provider that exposes the current listening state.
 final voiceListeningProvider = Provider<bool>((ref) {
   final voiceService = ref.watch(voiceServiceProvider);
   return voiceService.isListening;
 });
 
-/// Provider that exposes the always-listening state for UI updates.
-/// 
-/// Returns true when always-listen mode is enabled.
+/// Provider that exposes the always-listening state.
 final voiceAlwaysListeningProvider = Provider<bool>((ref) {
   final voiceService = ref.watch(voiceServiceProvider);
   return voiceService.isAlwaysListening;
 });
 
-/// Provider that exposes whether greeting is currently playing.
-/// 
-/// This is a stateful provider that tracks greeting playback status.
+/// Tracks whether the greeting is currently playing.
 final voiceGreetingPlayingProvider = StateProvider<bool>((ref) => false);
 
 /// Provider for executing voice commands.
-/// 
-/// Usage:
-/// ```dart
-/// final command = ref.read(voiceCommandProvider);
-/// command.execute('home', ref);
-/// ```
 final voiceCommandProvider = Provider<VoiceCommandExecutor>((ref) {
   return VoiceCommandExecutor(ref);
 });
 
-/// Executor for voice commands with navigation support.
+/// Executor for voice commands.
 class VoiceCommandExecutor {
   final Ref _ref;
 
   VoiceCommandExecutor(this._ref);
 
-  /// Executes a voice command and navigates accordingly.
-  /// 
-  /// Returns true if command was recognized and executed, false otherwise.
-  bool execute(String commandText, {String? locale}) async {
+  /// Parses a voice command.
+  ///
+  /// Returns true when a recognized command was detected.
+  bool execute(String commandText, {String? locale}) {
     final voiceService = _ref.read(voiceServiceProvider);
     final parsedCommand = voiceService.parseCommand(commandText);
-    
-    // Import GoRouter dynamically to avoid circular dependencies
-    // This assumes GoRouter is available via context in the calling widget
-    return true;
+
+    return parsedCommand is! UnrecognizedCommand;
   }
 
   /// Plays a greeting message.
@@ -70,17 +61,23 @@ class VoiceCommandExecutor {
     await voiceService.playGreeting();
   }
 
-  /// Starts listening for voice commands.
+  /// Starts listening for a voice command.
   Future<void> startListening({Function(String)? onResult}) async {
     final voiceService = _ref.read(voiceServiceProvider);
-    await voiceService.listenForCommand();
+    final command = await voiceService.listenForCommand();
+
+    if (command is UnrecognizedCommand) {
+      onResult?.call('');
+      return;
+    }
+
+    onResult?.call(command.runtimeType.toString());
   }
 }
 
-/// Provider for voice greeting state management.
-/// 
-/// Tracks whether greeting has been shown today and manages playback state.
-final voiceGreetingStateProvider = StateNotifierProvider<VoiceGreetingNotifier, VoiceGreetingState>(
+/// Provider for voice greeting state.
+final voiceGreetingStateProvider =
+    StateNotifierProvider<VoiceGreetingNotifier, VoiceGreetingState>(
   (ref) => VoiceGreetingNotifier(),
 );
 
@@ -113,40 +110,31 @@ class VoiceGreetingState {
 class VoiceGreetingNotifier extends StateNotifier<VoiceGreetingState> {
   VoiceGreetingNotifier() : super(const VoiceGreetingState());
 
-  /// Marks greeting as shown for today.
   void markShown() {
     state = state.copyWith(hasShownToday: true);
   }
 
-  /// Resets greeting state (for testing or new day).
   void reset() {
     state = const VoiceGreetingState();
   }
 
-  /// Sets playing state.
   void setPlaying(bool playing) {
     state = state.copyWith(isPlaying: playing);
   }
 
-  /// Sets last greeting text.
   void setLastGreetingText(String text) {
     state = state.copyWith(lastGreetingText: text);
   }
 }
 
 /// Provider for voice recognition results.
-/// 
-/// Streams recognized text from voice input.
 final voiceRecognitionProvider = StreamProvider<String>((ref) async* {
-  // This would integrate with the actual speech recognition stream
-  // For now, yields empty strings
   yield '';
 });
 
 /// Provider for voice command history.
-/// 
-/// Stores last N voice commands for analytics and debugging.
-final voiceCommandHistoryProvider = StateNotifierProvider<VoiceCommandHistoryNotifier, List<String>>(
+final voiceCommandHistoryProvider =
+    StateNotifierProvider<VoiceCommandHistoryNotifier, List<String>>(
   (ref) => VoiceCommandHistoryNotifier(),
 );
 
@@ -156,17 +144,14 @@ class VoiceCommandHistoryNotifier extends StateNotifier<List<String>> {
 
   VoiceCommandHistoryNotifier() : super([]);
 
-  /// Adds a command to history.
   void addCommand(String command) {
     final newHistory = [command, ...state].take(_maxHistory).toList();
     state = newHistory;
   }
 
-  /// Clears command history.
   void clear() {
     state = [];
   }
 
-  /// Gets last command.
   String? get lastCommand => state.isNotEmpty ? state.first : null;
 }

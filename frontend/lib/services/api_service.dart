@@ -11,15 +11,12 @@ import 'package:flutter/foundation.dart';
 // (see providers built on top of ApiService + CacheService) — keeping
 // network and cache concerns separate makes both easier to test.
 
-
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart' show kDebugMode;
 import '../models/transaction.dart';
 import '../models/credit_score.dart';
 import '../models/invoice.dart';
 import '../models/heatmap_data.dart';
 import '../models/customer.dart';
-
 
 /// Sealed error type so every call site is forced to handle each failure
 /// mode explicitly (e.g. showing the cached-data badge only on
@@ -29,17 +26,14 @@ sealed class ApiException implements Exception {
   final String message;
   const ApiException(this.message);
 
-
   @override
   String toString() => message;
 }
-
 
 /// Connection/send/receive timeout — surfaced as "Network slow, retry?"
 class ApiTimeoutException extends ApiException {
   const ApiTimeoutException() : super('Network slow, retry?');
 }
-
 
 /// No route to the backend at all (device not on the Office Kit bridge,
 /// backend process not running) — surfaced as the "Working offline" badge.
@@ -47,14 +41,13 @@ class ApiOfflineException extends ApiException {
   const ApiOfflineException() : super('Working offline');
 }
 
-
 /// Backend responded but with a 4xx/5xx — surfaced as "Backend error,
 /// please restart app" per the spec's error-handling requirement.
 class ApiServerException extends ApiException {
   final int statusCode;
-  const ApiServerException(this.statusCode) : super('Backend error, please restart app');
+  const ApiServerException(this.statusCode)
+      : super('Backend error, please restart app');
 }
-
 
 /// Anything that doesn't fit the three cases above (malformed response
 /// body, cancellation, etc.) — kept distinct so it's never silently
@@ -63,9 +56,9 @@ class ApiUnknownException extends ApiException {
   const ApiUnknownException(super.message);
 }
 
-
 class ApiService {
-  static const _baseUrl = 'http://10.215.72.35:8000/api/v1';  // ← CHANGED FROM localhost
+  static const _baseUrl =
+      'http://10.215.72.35:8000/api/v1'; // ← CHANGED FROM localhost
   static const _timeout = Duration(seconds: 5);
   static const _maxRetries = 3;
   static const _retryDelays = [
@@ -74,9 +67,7 @@ class ApiService {
     Duration(seconds: 4),
   ];
 
-
   final Dio _dio;
-
 
   ApiService({Dio? dio})
       : _dio = dio ??
@@ -91,7 +82,6 @@ class ApiService {
     // venue wifi during the demo).
     _dio.interceptors.add(_RetryInterceptor(_dio, _maxRetries, _retryDelays));
 
-
     // Debug-only request/response/error logging. Never attached in
     // release builds — request bodies can contain base64 image/audio
     // payloads that are noisy (and pointless) to log in production.
@@ -105,7 +95,6 @@ class ApiService {
     }
   }
 
-
   /// Converts a raw DioException into our sealed [ApiException] hierarchy.
   /// Every public method below funnels its errors through this so callers
   /// never have to inspect DioExceptionType themselves.
@@ -116,11 +105,11 @@ class ApiService {
       DioExceptionType.receiveTimeout =>
         const ApiTimeoutException(),
       DioExceptionType.connectionError => const ApiOfflineException(),
-      DioExceptionType.badResponse => ApiServerException(e.response?.statusCode ?? 500),
+      DioExceptionType.badResponse =>
+        ApiServerException(e.response?.statusCode ?? 500),
       _ => ApiUnknownException(e.message ?? 'Unknown network error'),
     };
   }
-
 
   /// POST /transactions/capture
   /// [imageBase64] is required for a normal capture; [audioBase64] is
@@ -138,12 +127,12 @@ class ApiService {
         if (audioBase64 != null) 'audio_base64': audioBase64,
         'audio_only': audioOnly,
       });
-      return TransactionCaptureResponse.fromJson(response.data as Map<String, dynamic>);
+      return TransactionCaptureResponse.fromJson(
+          response.data as Map<String, dynamic>);
     } on DioException catch (e) {
       throw _mapError(e);
     }
   }
-
 
   /// POST /transactions/capture with audio_only=true, returning the RAW
   /// response body instead of a parsed [TransactionCaptureResponse].
@@ -171,17 +160,30 @@ class ApiService {
     }
   }
 
-
-  /// GET /credit-score?days=30
-  Future<CreditScore> getCreditScore({int days = 30}) async {
+  /// POST /tax-assistant/query
+  /// Queries the on-device SLM (Phi-3 / Gemma) with natural language.
+  Future<String> askTaxAssistant(String query) async {
     try {
-      final response = await _dio.get('/credit-score', queryParameters: {'days': days});
-      return CreditScore.fromJson(response.data as Map<String, dynamic>);
+      final response = await _dio.post('/tax-assistant/query', data: {
+        'query': query,
+      });
+      final data = response.data as Map<String, dynamic>;
+      return data['answer'] as String;
     } on DioException catch (e) {
       throw _mapError(e);
     }
   }
 
+  /// GET /credit-score?days=30
+  Future<CreditScore> getCreditScore({int days = 30}) async {
+    try {
+      final response =
+          await _dio.get('/credit-score', queryParameters: {'days': days});
+      return CreditScore.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw _mapError(e);
+    }
+  }
 
   /// POST /gst/invoice
   /// Sends the composed invoice; backend renders the PDF and returns its
@@ -201,17 +203,16 @@ class ApiService {
     }
   }
 
-
   /// GET /analytics/heatmap?days=30
   Future<HeatmapData> getHeatmap({int days = 30}) async {
     try {
-      final response = await _dio.get('/analytics/heatmap', queryParameters: {'days': days});
+      final response =
+          await _dio.get('/analytics/heatmap', queryParameters: {'days': days});
       return HeatmapData.fromJson(response.data as Map<String, dynamic>);
     } on DioException catch (e) {
       throw _mapError(e);
     }
   }
-
 
   /// GET /transactions?start_date=...&end_date=...&category=...&customer_id=...
   /// All filters optional. NOTE: `customer_id` isn't in the endpoint's
@@ -235,12 +236,13 @@ class ApiService {
         if (customerId != null) 'customer_id': customerId,
       });
       final list = response.data as List<dynamic>;
-      return list.map((e) => Transaction.fromJson(e as Map<String, dynamic>)).toList();
+      return list
+          .map((e) => Transaction.fromJson(e as Map<String, dynamic>))
+          .toList();
     } on DioException catch (e) {
       throw _mapError(e);
     }
   }
-
 
   /// POST /customers/verify
   Future<Customer> verifyCustomer({
@@ -259,7 +261,6 @@ class ApiService {
   }
 }
 
-
 /// Retries idempotent GET requests (and POSTs the backend documents as
 /// safe to retry, e.g. capture — duplicate captures are dedup'd
 /// server-side by the AI model's own idempotency key) on transient
@@ -271,12 +272,9 @@ class _RetryInterceptor extends Interceptor {
   final int _maxRetries;
   final List<Duration> _delays;
 
-
   _RetryInterceptor(this._dio, this._maxRetries, this._delays);
 
-
   static const _retryCountKey = 'retry_count';
-
 
   bool _isTransient(DioException e) {
     return e.type == DioExceptionType.connectionTimeout ||
@@ -285,23 +283,19 @@ class _RetryInterceptor extends Interceptor {
         e.type == DioExceptionType.connectionError;
   }
 
-
   @override
-  Future<void> onError(DioException err, ErrorInterceptorHandler handler) async {
+  Future<void> onError(
+      DioException err, ErrorInterceptorHandler handler) async {
     final retryCount = (err.requestOptions.extra[_retryCountKey] as int?) ?? 0;
-
 
     if (!_isTransient(err) || retryCount >= _maxRetries) {
       return handler.next(err);
     }
 
-
     await Future.delayed(_delays[retryCount]);
-
 
     final options = err.requestOptions;
     options.extra[_retryCountKey] = retryCount + 1;
-
 
     try {
       final response = await _dio.fetch(options);

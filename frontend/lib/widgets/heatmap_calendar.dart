@@ -16,15 +16,25 @@ class HeatmapCalendar extends StatelessWidget {
     this.squareSpacing = 4,
   });
 
-  static const List<String> _weekdayLabels = ['Mon', '', 'Wed', '', 'Fri', '', ''];
+  static const List<String> _weekdayLabels = [
+    'Mon',
+    '',
+    'Wed',
+    '',
+    'Fri',
+    '',
+    ''
+  ];
 
   Color _colorFor(DailySummary? day, bool isDark) {
     if (day == null) return Colors.transparent;
     final baseColor = KiranaColors.secondary;
     return switch (day.intensity) {
-      HeatmapIntensity.none => isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05),
-      HeatmapIntensity.light => baseColor.withOpacity(0.2),
-      HeatmapIntensity.medium => baseColor.withOpacity(0.5),
+      HeatmapIntensity.none => isDark
+          ? Colors.white.withValues(alpha: 0.05)
+          : Colors.black.withValues(alpha: 0.05),
+      HeatmapIntensity.light => baseColor.withValues(alpha: 0.2),
+      HeatmapIntensity.medium => baseColor.withValues(alpha: 0.5),
       HeatmapIntensity.dark => baseColor,
     };
   }
@@ -34,18 +44,21 @@ class HeatmapCalendar extends StatelessWidget {
     final sorted = [...days]..sort((a, b) => a.date.compareTo(b.date));
 
     final firstDate = sorted.first.date;
-    final firstMonday = firstDate.subtract(Duration(days: firstDate.weekday - 1));
+    final firstMonday =
+        firstDate.subtract(Duration(days: firstDate.weekday - 1));
 
     final weeks = <int, List<DailySummary?>>{};
     for (final day in sorted) {
       final weekIndex = day.date.difference(firstMonday).inDays ~/ 7;
-      final dayOfWeek = day.date.weekday - 1; 
+      final dayOfWeek = day.date.weekday - 1;
       weeks.putIfAbsent(weekIndex, () => List.filled(7, null, growable: false));
       weeks[weekIndex]![dayOfWeek] = day;
     }
 
     final maxWeek = weeks.keys.reduce((a, b) => a > b ? a : b);
-    return [for (var w = 0; w <= maxWeek; w++) weeks[w] ?? List.filled(7, null)];
+    return [
+      for (var w = 0; w <= maxWeek; w++) weeks[w] ?? List.filled(7, null)
+    ];
   }
 
   @override
@@ -73,7 +86,10 @@ class HeatmapCalendar extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 9,
                             fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withValues(alpha: 0.4),
                           ),
                         ),
                       ),
@@ -93,7 +109,8 @@ class HeatmapCalendar extends StatelessWidget {
                         child: Column(
                           children: week
                               .map((day) => Padding(
-                                    padding: EdgeInsets.only(bottom: squareSpacing),
+                                    padding:
+                                        EdgeInsets.only(bottom: squareSpacing),
                                     child: _DaySquare(
                                       day: day,
                                       size: squareSize,
@@ -117,7 +134,8 @@ class _DaySquare extends StatelessWidget {
   final double size;
   final Color color;
 
-  const _DaySquare({required this.day, required this.size, required this.color});
+  const _DaySquare(
+      {required this.day, required this.size, required this.color});
 
   @override
   Widget build(BuildContext context) {
@@ -133,7 +151,8 @@ class _DaySquare extends StatelessWidget {
     if (day == null) return square;
 
     return Tooltip(
-      message: '${day!.date.day}/${day!.date.month}: ₹${day!.income.toStringAsFixed(0)}',
+      message:
+          '${day!.date.day}/${day!.date.month}: ₹${day!.income.toStringAsFixed(0)}',
       child: square,
     );
   }
@@ -150,14 +169,22 @@ class _EmptyHeatmapState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.calendar_today_rounded, size: 32, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1)),
+            Icon(Icons.calendar_today_rounded,
+                size: 32,
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurface
+                    .withValues(alpha: 0.1)),
             const SizedBox(height: 12),
             Text(
               'No data yet',
               style: TextStyle(
                 fontFamily: 'Quicksand',
                 fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurface
+                    .withValues(alpha: 0.3),
               ),
             ),
           ],

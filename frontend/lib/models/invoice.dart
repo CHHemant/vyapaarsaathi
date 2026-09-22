@@ -1,8 +1,3 @@
-// frontend/lib/models/invoice.dart
-
-/// GST slabs the invoice screen's dropdown offers. Kept as an enum with
-/// a `percent` getter rather than a raw double field so invalid rates
-/// (e.g. 17%) are unrepresentable.
 enum GstRate {
   zero(0),
   five(5),
@@ -11,18 +6,17 @@ enum GstRate {
   twentyEight(28);
 
   final int percent;
+
   const GstRate(this.percent);
 
   static GstRate fromPercent(int percent) {
     return GstRate.values.firstWhere(
-      (r) => r.percent == percent,
+      (rate) => rate.percent == percent,
       orElse: () => GstRate.zero,
     );
   }
 }
 
-/// A single line item on a GST invoice. Quantity is a double (not int) to
-/// support items sold by weight — "5 kg rice" from the voice-parsed flow.
 class InvoiceItem {
   final String id;
   final String name;
@@ -39,72 +33,158 @@ class InvoiceItem {
   });
 
   double get lineSubtotal => quantity * unitPrice;
+
   double get lineGst => lineSubtotal * gstRate.percent / 100;
+
   double get lineTotal => lineSubtotal + lineGst;
 
   factory InvoiceItem.fromJson(Map<String, dynamic> json) {
     return InvoiceItem(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      quantity: (json['quantity'] as num).toDouble(),
-      unitPrice: (json['unit_price'] as num).toDouble(),
-      gstRate: GstRate.fromPercent((json['gst_rate'] as num).toInt()),
+      id: json['id'] as String? ??
+          DateTime.now().microsecondsSinceEpoch.toString(),
+      name: json['name'] as String? ?? 'Item',
+      quantity: (json['quantity'] as num?)?.toDouble() ?? 0,
+      unitPrice: (json['unit_price'] as num?)?.toDouble() ?? 0,
+      gstRate: GstRate.fromPercent(
+        (json['gst_rate'] as num?)?.toInt() ?? 0,
+      ),
     );
   }
 
-  Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'quantity': quantity,
-        'unit_price': unitPrice,
-        'gst_rate': gstRate.percent,
-      };
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'quantity': quantity,
+      'unit_price': unitPrice,
+      'gst_rate': gstRate.percent,
+    };
+  }
 }
 
-/// A GST-ready invoice, built client-side from [InvoiceItem]s and sent to
-/// `POST /gst/invoice`, which returns [pdfPath] once generated.
 class Invoice {
+  final String? storageId;
+  final String? invoiceNumber;
   final String? customerId;
   final String? customerName;
   final List<InvoiceItem> items;
-
-  /// Set only after the backend responds with a generated PDF — null
-  /// while the invoice is still being composed on-screen.
   final String? pdfPath;
+  final bool isPaid;
+  final DateTime? paidAt;
+  final String? paymentSlipPath;
+  final DateTime? createdAt;
 
   const Invoice({
     required this.items,
+    this.storageId,
+    this.invoiceNumber,
     this.customerId,
     this.customerName,
     this.pdfPath,
+    this.isPaid = false,
+    this.paidAt,
+    this.paymentSlipPath,
+    this.createdAt,
   });
 
-  double get subtotal => items.fold(0, (sum, item) => sum + item.lineSubtotal);
-  double get gstTotal => items.fold(0, (sum, item) => sum + item.lineGst);
-  double get grandTotal => subtotal + gstTotal;
-
-  factory Invoice.fromJson(Map<String, dynamic> json) {
-    return Invoice(
-      customerId: json['customer_id'] as String?,
-      customerName: json['customer_name'] as String?,
-      items: (json['items'] as List<dynamic>)
-          .map((e) => InvoiceItem.fromJson(e as Map<String, dynamic>))
-          .toList(),
-      pdfPath: json['pdf_path'] as String?,
+  double get subtotal {
+    return items.fold(
+      0,
+      (sum, item) => sum + item.lineSubtotal,
     );
   }
 
-  Map<String, dynamic> toJson() => {
-        'customer_id': customerId,
-        'customer_name': customerName,
-        'items': items.map((i) => i.toJson()).toList(),
-        if (pdfPath != null) 'pdf_path': pdfPath,
-      };
+  double get gstTotal {
+    return items.fold(
+      0,
+      (sum, item) => sum + item.lineGst,
+    );
+  }
 
-  Invoice copyWith({List<InvoiceItem>? items, String? pdfPath}) => Invoice(
-        customerId: customerId,
-        customerName: customerName,
-        items: items ?? this.items,
-        pdfPath: pdfPath ?? this.pdfPath,
-      );
+  double get grandTotal => subtotal + gstTotal;
+
+  factory Invoice.fromJson(Map<String, dynamic> json) {
+    final rawItems = json['items'];
+
+    final items = rawItems is List
+        ? rawItems
+            .whereType<Map>()
+            .map(
+              (item) => InvoiceItem.fromJson(
+                Map<String, dynamic>.from(item),
+              ),
+            )
+            .toList()
+        : <InvoiceItem>[];
+
+    DateTime? createdAt;
+
+    final rawCreatedAt = json['created_at'];
+
+    if (rawCreatedAt is String && rawCreatedAt.isNotEmpty) {
+      createdAt = DateTime.tryParse(rawCreatedAt);
+    }
+
+    DateTime? paidAt;
+
+    final rawPaidAt = json['paid_at'];
+
+    if (rawPaidAt is String && rawPaidAt.isNotEmpty) {
+      paidAt = DateTime.tryParse(rawPaidAt);
+    }
+
+    return Invoice(
+      storageId: json['storage_id'] as String?,
+      invoiceNumber: json['invoice_number'] as String?,
+      customerId: json['customer_id'] as String?,
+      customerName: json['customer_name'] as String?,
+      items: List<InvoiceItem>.unmodifiable(items),
+      pdfPath: json['pdf_path'] as String?,
+      isPaid: json['is_paid'] as bool? ?? false,
+      paidAt: paidAt,
+      paymentSlipPath: json['payment_slip_path'] as String?,
+      createdAt: createdAt,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'storage_id': storageId,
+      'invoice_number': invoiceNumber,
+      'customer_id': customerId,
+      'customer_name': customerName,
+      'items': items.map((item) => item.toJson()).toList(),
+      if (pdfPath != null) 'pdf_path': pdfPath,
+      'is_paid': isPaid,
+      if (paidAt != null) 'paid_at': paidAt!.toIso8601String(),
+      if (paymentSlipPath != null) 'payment_slip_path': paymentSlipPath,
+      if (createdAt != null) 'created_at': createdAt!.toIso8601String(),
+    };
+  }
+
+  Invoice copyWith({
+    String? storageId,
+    String? invoiceNumber,
+    String? customerId,
+    String? customerName,
+    List<InvoiceItem>? items,
+    String? pdfPath,
+    bool? isPaid,
+    DateTime? paidAt,
+    String? paymentSlipPath,
+    DateTime? createdAt,
+  }) {
+    return Invoice(
+      storageId: storageId ?? this.storageId,
+      invoiceNumber: invoiceNumber ?? this.invoiceNumber,
+      customerId: customerId ?? this.customerId,
+      customerName: customerName ?? this.customerName,
+      items: items ?? this.items,
+      pdfPath: pdfPath ?? this.pdfPath,
+      isPaid: isPaid ?? this.isPaid,
+      paidAt: paidAt ?? this.paidAt,
+      paymentSlipPath: paymentSlipPath ?? this.paymentSlipPath,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
 }

@@ -1,0 +1,1171 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+
+import '../../main.dart';
+import '../../models/user_profile.dart';
+import '../../providers/core_providers.dart';
+import '../../providers/khata/khata_provider.dart';
+import '../../providers/transactions/transaction_provider.dart';
+import '../../services/cache_service.dart';
+import '../../services/local_auth_service.dart';
+import '../../theme/kirana_colors.dart';
+
+class SettingsScreen extends ConsumerStatefulWidget {
+  const SettingsScreen({super.key});
+
+  @override
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  late final LocalAuthService _authService;
+
+  UserProfile? _currentUser;
+  List<UserProfile> _accounts = [];
+
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _authService = LocalAuthService();
+    _loadSettings();
+  }
+
+  Future<void> _loadSettings() async {
+    try {
+      final current = await _authService.getCurrentUser();
+      final accounts = await _authService.getAllAccounts();
+
+      if (!mounted) return;
+
+      setState(() {
+        _currentUser = current;
+        _accounts = accounts;
+        _loading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+
+      setState(() {
+        _loading = false;
+      });
+
+      _message('Unable to load settings.');
+    }
+  }
+
+  Future<void> _switchAccount(UserProfile account) async {
+    if (_currentUser?.id == account.id) return;
+
+    try {
+      final switched = await _authService.switchAccount(account.id);
+
+      if (!switched) {
+        _message('Unable to switch account.');
+        return;
+      }
+
+      _invalidateAccountData();
+
+      final current = await _authService.getCurrentUser();
+      final accounts = await _authService.getAllAccounts();
+
+      if (!mounted) return;
+
+      setState(() {
+        _currentUser = current;
+        _accounts = accounts;
+      });
+
+      _message('${account.storeName} is now active.');
+    } catch (_) {
+      if (!mounted) return;
+      _message('Unable to switch account.');
+    }
+  }
+
+  void _invalidateAccountData() {
+    ref.invalidate(transactionProvider);
+    ref.invalidate(todayTransactionsProvider);
+    ref.invalidate(weeklyTransactionsProvider);
+    ref.invalidate(todaySalesProvider);
+    ref.invalidate(todayExpensesProvider);
+    ref.invalidate(todayTransactionCountProvider);
+    ref.invalidate(weeklySalesProvider);
+    ref.invalidate(khataEntriesProvider);
+  }
+
+  Future<void> _addAccount() async {
+    final result = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const _AddAccountSheet(),
+    );
+
+    if (result == true) {
+      await _loadSettings();
+    }
+  }
+
+  Future<void> _editProfile() async {
+    final profile = _currentUser;
+
+    if (profile == null) return;
+
+    final updated = await showModalBottomSheet<UserProfile>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _EditProfileSheet(profile: profile),
+    );
+
+    if (updated == null) return;
+
+    await _authService.updateProfile(updated);
+
+    if (!mounted) return;
+
+    setState(() {
+      _currentUser = updated;
+    });
+
+    _message('Profile updated.');
+  }
+
+  Future<void> _changeLanguage(Locale locale) async {
+    final box = Hive.box(HiveBoxes.appState);
+
+    await box.put(
+      'selected_locale',
+      locale.languageCode,
+    );
+
+    ref.read(localeProvider.notifier).state = locale;
+
+    if (!mounted) return;
+
+    final message = switch (locale.languageCode) {
+      'mr' => 'भाषा मराठीमध्ये बदलली.',
+      'te' => 'భాష తెలుగులోకి మార్చబడింది.',
+      _ => 'Language changed to English.',
+    };
+
+    _message(message);
+  }
+
+  Future<void> _changeDarkMode(bool enabled) async {
+    final box = Hive.box(HiveBoxes.appState);
+
+    await box.put(
+      'dark_mode',
+      enabled,
+    );
+
+    ref.read(darkModeProvider.notifier).state = enabled;
+  }
+
+  Future<void> _logout() async {
+    final confirmed = await _confirm(
+      title: 'Log out?',
+      message: 'Your local business data will remain on this device.',
+      confirmText: 'Log out',
+    );
+
+    if (!confirmed) return;
+
+    await _authService.logout();
+
+    if (!mounted) return;
+
+    context.go('/login');
+  }
+
+  Future<void> _deleteAccount() async {
+    final profile = _currentUser;
+
+    if (profile == null) return;
+
+    final confirmed = await _confirm(
+      title: 'Delete local account?',
+      message: 'This will permanently remove this account and all business '
+          'records stored for it on this device.',
+      confirmText: 'Delete',
+      destructive: true,
+    );
+
+    if (!confirmed) return;
+
+    try {
+      final cache = ref.read(cacheServiceProvider);
+
+      // Delete only the business data belonging to this account.
+      await cache.deleteAccountData(profile.id);
+
+      // Then remove the account profile itself.
+      await _authService.deleteAccount(profile.id);
+
+      final remaining = await _authService.getAllAccounts();
+
+      if (!mounted) return;
+
+      if (remaining.isEmpty) {
+        _invalidateAccountData();
+        context.go('/login');
+        return;
+      }
+
+      final nextAccount = remaining.first;
+      final switched = await _authService.switchAccount(nextAccount.id);
+
+      if (!switched) {
+        _message(
+          'Account deleted, but another account could not be activated.',
+        );
+        return;
+      }
+
+      _invalidateAccountData();
+
+      final current = await _authService.getCurrentUser();
+      final refreshedAccounts = await _authService.getAllAccounts();
+
+      if (!mounted) return;
+
+      setState(() {
+        _accounts = refreshedAccounts;
+        _currentUser = current;
+      });
+
+      _message(
+        'Account deleted. ${nextAccount.storeName} is now active.',
+      );
+    } catch (_) {
+      if (!mounted) return;
+      _message('Unable to delete the account.');
+    }
+  }
+
+  Future<bool> _confirm({
+    required String title,
+    required String message,
+    required String confirmText,
+    bool destructive = false,
+  }) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text(
+            title,
+            style: GoogleFonts.bebasNeue(
+              fontSize: 22,
+              letterSpacing: 0.7,
+            ),
+          ),
+          content: Text(
+            message,
+            style: const TextStyle(
+              fontSize: 13,
+              height: 1.45,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor:
+                    destructive ? Colors.red.shade700 : KiranaColors.primary,
+              ),
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: Text(confirmText),
+            ),
+          ],
+        );
+      },
+    );
+
+    return result ?? false;
+  }
+
+  void _message(String message) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(message),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final locale = ref.watch(localeProvider);
+    final darkMode = ref.watch(darkModeProvider);
+
+    return Scaffold(
+      backgroundColor: KiranaColors.bg,
+      appBar: AppBar(
+        backgroundColor: KiranaColors.bg,
+        elevation: 0,
+        centerTitle: true,
+        title: Text(
+          'Settings',
+          style: GoogleFonts.bebasNeue(
+            fontSize: 25,
+            letterSpacing: 1,
+          ),
+        ),
+      ),
+      body: _loading
+          ? const Center(
+              child: CircularProgressIndicator(),
+            )
+          : RefreshIndicator(
+              onRefresh: _loadSettings,
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(
+                  16,
+                  8,
+                  16,
+                  32,
+                ),
+                children: [
+                  _buildProfile(),
+                  const SizedBox(height: 22),
+                  _buildAccounts(),
+                  const SizedBox(height: 22),
+                  _buildLanguage(locale),
+                  const SizedBox(height: 22),
+                  _buildAppearance(darkMode),
+                  const SizedBox(height: 22),
+                  _buildAccountActions(),
+                  const SizedBox(height: 28),
+                  const Center(
+                    child: Text(
+                      'VyapaarSaathi',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Colors.black38,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+    );
+  }
+
+  Widget _buildProfile() {
+    final profile = _currentUser;
+
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: KiranaColors.primary,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.14),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Icon(
+              Icons.storefront_rounded,
+              color: Colors.white,
+              size: 27,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  profile?.storeName ?? 'My Store',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  profile?.ownerName ?? 'Owner',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.75),
+                    fontSize: 12,
+                  ),
+                ),
+                if (profile != null && profile.phoneNumber.isNotEmpty) ...[
+                  const SizedBox(height: 3),
+                  Text(
+                    profile.displayPhone,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.65),
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          IconButton(
+            tooltip: 'Edit profile',
+            onPressed: _editProfile,
+            icon: const Icon(
+              Icons.edit_rounded,
+              color: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAccounts() {
+    final accounts = <UserProfile>[];
+
+    if (_currentUser != null) {
+      accounts.add(_currentUser!);
+    }
+
+    for (final account in _accounts) {
+      if (!accounts.any((item) => item.id == account.id)) {
+        accounts.add(account);
+      }
+    }
+
+    return _section(
+      title: 'BUSINESS ACCOUNTS',
+      icon: Icons.store_rounded,
+      child: Column(
+        children: [
+          ...accounts.map(
+            (account) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: _accountCard(account),
+            ),
+          ),
+          _addAccountButton(),
+        ],
+      ),
+    );
+  }
+
+  Widget _accountCard(UserProfile account) {
+    final active = account.id == _currentUser?.id;
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(15),
+      onTap: active ? null : () => _switchAccount(account),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(
+            color: active
+                ? KiranaColors.primary
+                : Colors.black.withValues(alpha: 0.06),
+            width: active ? 1.5 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: KiranaColors.bg,
+                borderRadius: BorderRadius.circular(11),
+              ),
+              child: const Icon(Icons.storefront_rounded),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    account.storeName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    account.ownerName,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: Colors.black54,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (active)
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 5,
+                ),
+                decoration: BoxDecoration(
+                  color: KiranaColors.primary,
+                  borderRadius: BorderRadius.circular(7),
+                ),
+                child: const Text(
+                  'ACTIVE',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 8,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              )
+            else
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: Colors.black38,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _addAccountButton() {
+    return InkWell(
+      borderRadius: BorderRadius.circular(14),
+      onTap: _addAccount,
+      child: Container(
+        padding: const EdgeInsets.all(15),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: Colors.black.withValues(alpha: 0.06),
+          ),
+        ),
+        child: const Row(
+          children: [
+            Icon(
+              Icons.add_business_rounded,
+              color: KiranaColors.primary,
+            ),
+            SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Add another business account',
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
+                ),
+              ),
+            ),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: Colors.black38,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLanguage(Locale locale) {
+    return _section(
+      title: 'LANGUAGE',
+      icon: Icons.translate_rounded,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          children: [
+            _languageRow(
+              locale,
+              const Locale('en'),
+              'English',
+              'English',
+            ),
+            const Divider(height: 1),
+            _languageRow(
+              locale,
+              const Locale('mr'),
+              'मराठी',
+              'Marathi',
+            ),
+            const Divider(height: 1),
+            _languageRow(
+              locale,
+              const Locale('te'),
+              'తెలుగు',
+              'Telugu',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _languageRow(
+    Locale current,
+    Locale value,
+    String title,
+    String subtitle,
+  ) {
+    final selected = current.languageCode == value.languageCode;
+
+    return InkWell(
+      onTap: () {
+        if (!selected) {
+          _changeLanguage(value);
+        }
+      },
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 12,
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black45,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              width: 22,
+              height: 22,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: selected ? KiranaColors.primary : Colors.black26,
+                  width: 2,
+                ),
+              ),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                margin: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: selected ? KiranaColors.primary : Colors.transparent,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAppearance(bool darkMode) {
+    return _section(
+      title: 'APPEARANCE',
+      icon: Icons.palette_rounded,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: SwitchListTile(
+          value: darkMode,
+          activeThumbColor: KiranaColors.primary,
+          onChanged: _changeDarkMode,
+          title: const Text(
+            'Dark mode',
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
+              fontSize: 13,
+            ),
+          ),
+          subtitle: const Text(
+            'Use the dark interface throughout the app.',
+            style: TextStyle(fontSize: 11),
+          ),
+          secondary: const Icon(Icons.dark_mode_rounded),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAccountActions() {
+    return _section(
+      title: 'ACCOUNT',
+      icon: Icons.manage_accounts_rounded,
+      child: Column(
+        children: [
+          _actionTile(
+            icon: Icons.logout_rounded,
+            title: 'Log out',
+            subtitle: 'Sign out of the current business account.',
+            onTap: _logout,
+          ),
+          const SizedBox(height: 10),
+          _actionTile(
+            icon: Icons.delete_outline_rounded,
+            title: 'Delete local account',
+            subtitle: 'Remove this account profile from this device.',
+            destructive: true,
+            onTap: _deleteAccount,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _actionTile({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+    bool destructive = false,
+  }) {
+    final color = destructive ? Colors.red.shade700 : Colors.black87;
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(14),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(15),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: destructive
+                ? Colors.red.withValues(alpha: 0.12)
+                : Colors.black.withValues(alpha: 0.06),
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: color, size: 21),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 13,
+                      color: color,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      color: Colors.black45,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(
+              Icons.chevron_right_rounded,
+              size: 18,
+              color: Colors.black38,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _section({
+    required String title,
+    required IconData icon,
+    required Widget child,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(
+              icon,
+              size: 18,
+              color: KiranaColors.secondaryContainer,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              title,
+              style: GoogleFonts.bebasNeue(
+                fontSize: 18,
+                letterSpacing: 0.8,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        child,
+      ],
+    );
+  }
+}
+
+class _AddAccountSheet extends StatefulWidget {
+  const _AddAccountSheet();
+
+  @override
+  State<_AddAccountSheet> createState() => _AddAccountSheetState();
+}
+
+class _AddAccountSheetState extends State<_AddAccountSheet> {
+  final _storeController = TextEditingController();
+  final _ownerController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _emailController = TextEditingController();
+
+  bool _saving = false;
+
+  @override
+  void dispose() {
+    _storeController.dispose();
+    _ownerController.dispose();
+    _phoneController.dispose();
+    _emailController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _create() async {
+    final store = _storeController.text.trim();
+    final owner = _ownerController.text.trim();
+    final phone = _phoneController.text.trim();
+    final email = _emailController.text.trim();
+
+    if (store.isEmpty || owner.isEmpty) {
+      _error('Store name and owner name are required.');
+      return;
+    }
+
+    if (phone.isEmpty && email.isEmpty) {
+      _error('Enter a phone number or email.');
+      return;
+    }
+
+    setState(() {
+      _saving = true;
+    });
+
+    try {
+      final auth = LocalAuthService();
+
+      await auth.createLocalAccount(
+        storeName: store,
+        ownerName: owner,
+        phoneNumber: phone,
+        email: email.isEmpty ? null : email,
+      );
+
+      if (!mounted) return;
+
+      Navigator.pop(context, true);
+    } catch (_) {
+      if (!mounted) return;
+
+      setState(() {
+        _saving = false;
+      });
+
+      _error('Could not create the account.');
+    }
+  }
+
+  void _error(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _sheet(
+      context,
+      title: 'Add business account',
+      children: [
+        _field(
+          controller: _storeController,
+          label: 'Store name',
+          icon: Icons.storefront_rounded,
+        ),
+        const SizedBox(height: 12),
+        _field(
+          controller: _ownerController,
+          label: 'Owner name',
+          icon: Icons.person_rounded,
+        ),
+        const SizedBox(height: 12),
+        _field(
+          controller: _phoneController,
+          label: 'Phone number',
+          icon: Icons.phone_rounded,
+          keyboardType: TextInputType.phone,
+        ),
+        const SizedBox(height: 12),
+        _field(
+          controller: _emailController,
+          label: 'Email',
+          icon: Icons.email_rounded,
+          keyboardType: TextInputType.emailAddress,
+        ),
+        const SizedBox(height: 20),
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton(
+            onPressed: _saving ? null : _create,
+            child: _saving
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                    ),
+                  )
+                : const Text('Create account'),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _EditProfileSheet extends StatefulWidget {
+  final UserProfile profile;
+
+  const _EditProfileSheet({
+    required this.profile,
+  });
+
+  @override
+  State<_EditProfileSheet> createState() => _EditProfileSheetState();
+}
+
+class _EditProfileSheetState extends State<_EditProfileSheet> {
+  late final TextEditingController _store;
+  late final TextEditingController _owner;
+  late final TextEditingController _address;
+  late final TextEditingController _city;
+  late final TextEditingController _state;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _store = TextEditingController(
+      text: widget.profile.storeName,
+    );
+    _owner = TextEditingController(
+      text: widget.profile.ownerName,
+    );
+    _address = TextEditingController(
+      text: widget.profile.address ?? '',
+    );
+    _city = TextEditingController(
+      text: widget.profile.city ?? '',
+    );
+    _state = TextEditingController(
+      text: widget.profile.state ?? '',
+    );
+  }
+
+  @override
+  void dispose() {
+    _store.dispose();
+    _owner.dispose();
+    _address.dispose();
+    _city.dispose();
+    _state.dispose();
+    super.dispose();
+  }
+
+  void _save() {
+    if (_store.text.trim().isEmpty || _owner.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Store name and owner name are required.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    Navigator.pop(
+      context,
+      widget.profile.copyWith(
+        storeName: _store.text.trim(),
+        ownerName: _owner.text.trim(),
+        address: _address.text.trim(),
+        city: _city.text.trim(),
+        state: _state.text.trim(),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _sheet(
+      context,
+      title: 'Edit profile',
+      children: [
+        _field(
+          controller: _store,
+          label: 'Store name',
+          icon: Icons.storefront_rounded,
+        ),
+        const SizedBox(height: 12),
+        _field(
+          controller: _owner,
+          label: 'Owner name',
+          icon: Icons.person_rounded,
+        ),
+        const SizedBox(height: 12),
+        _field(
+          controller: _address,
+          label: 'Address',
+          icon: Icons.location_on_rounded,
+        ),
+        const SizedBox(height: 12),
+        _field(
+          controller: _city,
+          label: 'City',
+          icon: Icons.location_city_rounded,
+        ),
+        const SizedBox(height: 12),
+        _field(
+          controller: _state,
+          label: 'State',
+          icon: Icons.map_rounded,
+        ),
+        const SizedBox(height: 20),
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton(
+            onPressed: _save,
+            child: const Text('Save changes'),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+Widget _field({
+  required TextEditingController controller,
+  required String label,
+  required IconData icon,
+  TextInputType? keyboardType,
+}) {
+  return TextField(
+    controller: controller,
+    keyboardType: keyboardType,
+    decoration: InputDecoration(
+      labelText: label,
+      prefixIcon: Icon(icon),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+    ),
+  );
+}
+
+Widget _sheet(
+  BuildContext context, {
+  required String title,
+  required List<Widget> children,
+}) {
+  return SafeArea(
+    child: Container(
+      padding: EdgeInsets.fromLTRB(
+        20,
+        12,
+        20,
+        20 + MediaQuery.viewInsetsOf(context).bottom,
+      ),
+      decoration: BoxDecoration(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(24),
+        ),
+      ),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 42,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.black12,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+            const SizedBox(height: 18),
+            Text(
+              title,
+              style: GoogleFonts.bebasNeue(
+                fontSize: 24,
+                letterSpacing: 0.8,
+              ),
+            ),
+            const SizedBox(height: 18),
+            ...children,
+          ],
+        ),
+      ),
+    ),
+  );
+}

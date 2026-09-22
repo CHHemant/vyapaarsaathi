@@ -1,0 +1,1094 @@
+// lib/screens/invoices/invoice_preview_screen.dart
+
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+
+import '../../models/invoice.dart';
+import '../../providers/invoices/invoice_provider.dart';
+import '../../theme/kirana_colors.dart';
+
+class InvoicePreviewScreen extends ConsumerStatefulWidget {
+  const InvoicePreviewScreen({super.key});
+
+  @override
+  ConsumerState<InvoicePreviewScreen> createState() =>
+      _InvoicePreviewScreenState();
+}
+
+class _InvoicePreviewScreenState
+    extends ConsumerState<InvoicePreviewScreen> {
+  static const String _merchantVpa = 'vyapaar.ramesh@icici';
+  static const String _merchantName = 'VyapaarSaathi';
+
+  bool _isPaid = false;
+
+  String _formatAmount(double amount) {
+    return '₹${amount.toStringAsFixed(2)}';
+  }
+
+  String _formatQuantity(double quantity) {
+    if (quantity == quantity.roundToDouble()) {
+      return quantity.toInt().toString();
+    }
+
+    return quantity.toStringAsFixed(2);
+  }
+
+  String _formatDateTime(DateTime dateTime) {
+    const months = [
+      'JAN',
+      'FEB',
+      'MAR',
+      'APR',
+      'MAY',
+      'JUN',
+      'JUL',
+      'AUG',
+      'SEP',
+      'OCT',
+      'NOV',
+      'DEC',
+    ];
+
+    final hour = dateTime.hour % 12 == 0 ? 12 : dateTime.hour % 12;
+    final minute = dateTime.minute.toString().padLeft(2, '0');
+    final period = dateTime.hour >= 12 ? 'PM' : 'AM';
+
+    return '${dateTime.day.toString().padLeft(2, '0')} '
+        '${months[dateTime.month - 1]} '
+        '${dateTime.year}, '
+        '$hour:$minute $period';
+  }
+
+  String _invoiceNumber(Invoice invoice) {
+    final raw = [
+      invoice.customerId ?? '',
+      invoice.customerName ?? '',
+      ...invoice.items.map(
+        (item) =>
+            '${item.id}|${item.name}|${item.quantity}|'
+            '${item.unitPrice}|${item.gstRate.percent}',
+      ),
+    ].join('|');
+
+    final hash = raw.hashCode.abs();
+    return 'VS-${DateTime.now().year}-${(hash % 9000) + 1000}';
+  }
+
+  String _upiUri(Invoice invoice) {
+    final amount = invoice.grandTotal.toStringAsFixed(2);
+
+    return 'upi://pay'
+        '?pa=$_merchantVpa'
+        '&pn=$_merchantName'
+        '&am=$amount'
+        '&cu=INR';
+  }
+
+  Future<void> _copyVpa() async {
+    await Clipboard.setData(
+      const ClipboardData(text: _merchantVpa),
+    );
+
+    if (!mounted) return;
+
+    _showMessage('VPA copied to clipboard');
+  }
+
+  Future<void> _copyUpiPaymentLink() async {
+    final invoice = ref.read(invoiceProvider).valueOrNull?.first;
+
+    if (invoice == null) {
+      _showMessage('No saved invoice found');
+      return;
+    }
+
+    await Clipboard.setData(
+      ClipboardData(text: _upiUri(invoice)),
+    );
+
+    if (!mounted) return;
+
+    _showMessage(
+      'UPI payment link copied. Open your UPI app and paste it if required.',
+    );
+  }
+
+  Future<void> _shareBill() async {
+    final invoice = ref.read(invoiceProvider).valueOrNull?.first;
+
+    if (invoice == null) {
+      _showMessage('No saved invoice found');
+      return;
+    }
+
+    final message = '''
+VyapaarSaathi Invoice
+
+Invoice: ${_invoiceNumber(invoice)}
+Customer: ${invoice.customerName ?? 'Customer'}
+GSTIN: ${invoice.customerId ?? 'N/A'}
+
+Taxable Value: ${_formatAmount(invoice.subtotal)}
+GST: ${_formatAmount(invoice.gstTotal)}
+Grand Total: ${_formatAmount(invoice.grandTotal)}
+
+Payment Status: ${_isPaid ? 'PAID' : 'PENDING'}
+
+UPI VPA: $_merchantVpa
+UPI Link: ${_upiUri(invoice)}
+''';
+
+    await Clipboard.setData(
+      ClipboardData(text: message),
+    );
+
+    if (!mounted) return;
+
+    _showMessage(
+      'Invoice details copied. Paste them into WhatsApp.',
+    );
+  }
+
+  Future<void> _printBill() async {
+    final invoice = ref.read(invoiceProvider).valueOrNull?.first;
+
+    if (invoice == null) {
+      _showMessage('No saved invoice found');
+      return;
+    }
+
+    _showMessage(
+      'Invoice ${_invoiceNumber(invoice)} is ready for printing.',
+    );
+  }
+
+  Future<void> _markPaid() async {
+    if (_isPaid) {
+      _showMessage('Invoice is already marked as paid');
+      return;
+    }
+
+    setState(() {
+      _isPaid = true;
+    });
+
+    _showMessage('Invoice marked as paid');
+  }
+
+  void _showMessage(String message) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(message),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final invoiceState = ref.watch(invoiceProvider);
+
+    return Scaffold(
+      backgroundColor: KiranaColors.bg,
+      appBar: AppBar(
+        title: Column(
+          children: [
+            Text(
+              'MERCHANT ACCESS',
+              style: GoogleFonts.bebasNeue(
+                fontSize: 20,
+                letterSpacing: 1.0,
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 8,
+                vertical: 2,
+              ),
+              decoration: BoxDecoration(
+                color: KiranaColors.tertiaryFixed,
+                borderRadius: BorderRadius.circular(100),
+              ),
+              child: Text(
+                '• LOCAL INVOICE • OFFLINE READY',
+                style: GoogleFonts.jetBrainsMono(
+                  fontSize: 8,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.0,
+                ),
+              ),
+            ),
+          ],
+        ),
+        centerTitle: true,
+      ),
+      body: invoiceState.when(
+        loading: () => const Center(
+          child: CircularProgressIndicator(),
+        ),
+        error: (error, _) => Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Text(
+              'Unable to load invoice.\n$error',
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+        data: (invoices) {
+          if (invoices.isEmpty) {
+            return const Center(
+              child: Text('No saved invoice found'),
+            );
+          }
+
+          final invoice = invoices.first;
+
+          return ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              _buildManifestHeader(invoice),
+              const SizedBox(height: 16),
+              _buildUpiQrCard(invoice),
+              const SizedBox(height: 16),
+              _buildItemizedLedger(invoice),
+              const SizedBox(height: 16),
+              _buildDispatchActions(),
+              const SizedBox(height: 16),
+              _buildCryptographicSeal(invoice),
+              const SizedBox(height: 40),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildManifestHeader(Invoice invoice) {
+    final invoiceNumber = _invoiceNumber(invoice);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: KiranaColors.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 4,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: _isPaid
+                          ? Colors.green
+                          : KiranaColors.secondaryContainer,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    _isPaid
+                        ? 'SETTLED'
+                        : 'PENDING SETTLEMENT',
+                    style: GoogleFonts.jetBrainsMono(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w800,
+                      color: _isPaid
+                          ? Colors.green.shade800
+                          : KiranaColors.secondary,
+                      letterSpacing: 1.5,
+                    ),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 2,
+                ),
+                decoration: BoxDecoration(
+                  color: KiranaColors.tertiaryFixed,
+                  borderRadius: BorderRadius.circular(100),
+                ),
+                child: Text(
+                  'E-WAYBILL READY',
+                  style: GoogleFonts.jetBrainsMono(
+                    fontSize: 8,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'TAX INVOICE #$invoiceNumber',
+            style: GoogleFonts.bebasNeue(
+              fontSize: 24,
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(
+                Icons.storefront_rounded,
+                size: 18,
+                color: KiranaColors.onSurfaceVariant,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'VyapaarSaathi Merchant',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      'GSTIN: 27AABCM8921R1ZX • MAHARASHTRA',
+                      style: GoogleFonts.jetBrainsMono(
+                        fontSize: 9,
+                        color: KiranaColors.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: KiranaColors.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment:
+                        CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Invoice Date',
+                        style: GoogleFonts.jetBrainsMono(
+                          fontSize: 9,
+                          color: KiranaColors.onSurfaceVariant,
+                        ),
+                      ),
+                      Text(
+                        _formatDateTime(DateTime.now()),
+                        style: GoogleFonts.jetBrainsMono(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment:
+                        CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Place of Supply',
+                        style: GoogleFonts.jetBrainsMono(
+                          fontSize: 9,
+                          color: KiranaColors.onSurfaceVariant,
+                        ),
+                      ),
+                      Text(
+                        '27 - MAHARASHTRA (INTRA)',
+                        style: GoogleFonts.jetBrainsMono(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'BUYER',
+            style: GoogleFonts.jetBrainsMono(
+              fontSize: 8,
+              color: KiranaColors.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            invoice.customerName ?? 'Customer',
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          if (invoice.customerId != null &&
+              invoice.customerId!.isNotEmpty)
+            Text(
+              'GSTIN: ${invoice.customerId}',
+              style: GoogleFonts.jetBrainsMono(
+                fontSize: 9,
+                color: KiranaColors.onSurfaceVariant,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUpiQrCard(Invoice invoice) {
+    final amount = invoice.grandTotal;
+    final upiUri = _upiUri(invoice);
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: KiranaColors.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 4,
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment:
+                MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  const Icon(
+                    Icons.qr_code_scanner_rounded,
+                    size: 22,
+                    color: KiranaColors.secondary,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'BHARAT UPI PAYMENT',
+                    style: GoogleFonts.bebasNeue(
+                      fontSize: 20,
+                    ),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 2,
+                ),
+                decoration: BoxDecoration(
+                  color: KiranaColors.surfaceContainer,
+                  borderRadius: BorderRadius.circular(100),
+                ),
+                child: Text(
+                  'OFFLINE READY',
+                  style: GoogleFonts.jetBrainsMono(
+                    fontSize: 8,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Container(
+            width: 190,
+            height: 190,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Colors.black12,
+              ),
+            ),
+            child: QrImageView(
+              data: upiUri,
+              version: QrVersions.auto,
+              backgroundColor: Colors.white,
+              eyeStyle: const QrEyeStyle(
+                eyeShape: QrEyeShape.square,
+                color: Colors.black,
+              ),
+              dataModuleStyle: const QrDataModuleStyle(
+                dataModuleShape: QrDataModuleShape.square,
+                color: Colors.black,
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'PAY ${_formatAmount(amount)}',
+            style: GoogleFonts.bebasNeue(
+              fontSize: 28,
+            ),
+          ),
+          Text(
+            'VPA: $_merchantVpa',
+            style: GoogleFonts.jetBrainsMono(
+              fontSize: 10,
+              color: KiranaColors.onSurfaceVariant,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: GestureDetector(
+                  onTap: _copyVpa,
+                  child: _buildQrAction(
+                    Icons.content_copy_rounded,
+                    'COPY VPA',
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: GestureDetector(
+                  onTap: _copyUpiPaymentLink,
+                  child: _buildQrAction(
+                    Icons.open_in_new_rounded,
+                    'OPEN UPI APP',
+                    isPrimary: true,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQrAction(
+    IconData icon,
+    String label, {
+    bool isPrimary = false,
+  }) {
+    return Container(
+      height: 40,
+      decoration: BoxDecoration(
+        color: isPrimary
+            ? KiranaColors.primary
+            : KiranaColors.surfaceContainer,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            icon,
+            size: 16,
+            color: isPrimary
+                ? Colors.white
+                : KiranaColors.onSurface,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: GoogleFonts.jetBrainsMono(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              color: isPrimary
+                  ? Colors.white
+                  : KiranaColors.onSurface,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildItemizedLedger(Invoice invoice) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: KiranaColors.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 4,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
+        children: [
+          Text(
+            'ITEMIZED PARTICULARS',
+            style: GoogleFonts.bebasNeue(
+              fontSize: 20,
+              letterSpacing: 1.0,
+            ),
+          ),
+          const SizedBox(height: 12),
+          ...invoice.items.asMap().entries.map(
+            (entry) {
+              final index = entry.key;
+              final item = entry.value;
+
+              return Padding(
+                padding: EdgeInsets.only(
+                  bottom: index == invoice.items.length - 1
+                      ? 0
+                      : 8,
+                ),
+                child: _buildLedgerItem(item),
+              );
+            },
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: KiranaColors.surfaceContainerHigh,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Column(
+              children: [
+                _buildSummaryRow(
+                  'TAXABLE VALUE',
+                  invoice.subtotal,
+                ),
+                _buildSummaryRow(
+                  'GST',
+                  invoice.gstTotal,
+                ),
+                const Divider(height: 16),
+                Row(
+                  mainAxisAlignment:
+                      MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'GRAND TOTAL',
+                      style: GoogleFonts.bebasNeue(
+                        fontSize: 24,
+                      ),
+                    ),
+                    Text(
+                      _formatAmount(invoice.grandTotal),
+                      style: GoogleFonts.bebasNeue(
+                        fontSize: 28,
+                        color:
+                            KiranaColors.secondaryContainer,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLedgerItem(InvoiceItem item) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: KiranaColors.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisAlignment:
+            MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.name,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 1,
+                      ),
+                      decoration: BoxDecoration(
+                        color:
+                            KiranaColors.surfaceContainerHigh,
+                        borderRadius:
+                            BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        'GST ${item.gstRate.percent}%',
+                        style: GoogleFonts.jetBrainsMono(
+                          fontSize: 8,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        '${_formatQuantity(item.quantity)} × '
+                        '${_formatAmount(item.unitPrice)}',
+                        style: GoogleFonts.jetBrainsMono(
+                          fontSize: 9,
+                          color:
+                              KiranaColors.onSurfaceVariant,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Column(
+            crossAxisAlignment:
+                CrossAxisAlignment.end,
+            children: [
+              Text(
+                _formatAmount(item.lineTotal),
+                style: GoogleFonts.jetBrainsMono(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                'GST ${_formatAmount(item.lineGst)}',
+                style: GoogleFonts.jetBrainsMono(
+                  fontSize: 9,
+                  color:
+                      KiranaColors.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryRow(
+    String label,
+    double value,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        vertical: 3,
+      ),
+      child: Row(
+        mainAxisAlignment:
+            MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: GoogleFonts.jetBrainsMono(
+              fontSize: 9,
+              color: KiranaColors.onSurfaceVariant,
+            ),
+          ),
+          Text(
+            _formatAmount(value),
+            style: GoogleFonts.jetBrainsMono(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDispatchActions() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: KiranaColors.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 4,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
+        children: [
+          Text(
+            'OPERATIONAL DISPATCH',
+            style: GoogleFonts.bebasNeue(
+              fontSize: 20,
+              letterSpacing: 1.0,
+            ),
+          ),
+          const SizedBox(height: 12),
+          GestureDetector(
+            onTap: _shareBill,
+            child: _buildDispatchButton(
+              Icons.send_rounded,
+              '1-Tap WhatsApp Bill',
+              'Copy invoice details for WhatsApp',
+              isSecondary: true,
+            ),
+          ),
+          const SizedBox(height: 8),
+          GestureDetector(
+            onTap: _printBill,
+            child: _buildDispatchButton(
+              Icons.print_rounded,
+              'Print Thermal Slip',
+              'Prepare invoice for thermal printing',
+            ),
+          ),
+          const SizedBox(height: 16),
+          GestureDetector(
+            onTap: _markPaid,
+            child: Container(
+              height: 56,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: _isPaid
+                    ? Colors.green.shade700
+                    : KiranaColors.primary,
+                borderRadius:
+                    BorderRadius.circular(12),
+              ),
+              child: Row(
+                mainAxisAlignment:
+                    MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    _isPaid
+                        ? Icons.check_circle_rounded
+                        : Icons.payments_rounded,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    _isPaid
+                        ? 'PAID'
+                        : 'COLLECT CASH & MARK PAID →',
+                    style: GoogleFonts.bebasNeue(
+                      fontSize: 20,
+                      color: Colors.white,
+                      letterSpacing: 1.0,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDispatchButton(
+    IconData icon,
+    String title,
+    String subtitle, {
+    bool isSecondary = false,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: KiranaColors.surfaceContainer,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: isSecondary
+                  ? KiranaColors.tertiaryFixed
+                  : KiranaColors.surfaceContainerLowest,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              icon,
+              size: 16,
+              color: isSecondary
+                  ? KiranaColors.onTertiaryContainer
+                  : KiranaColors.onSurface,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  subtitle,
+                  style: GoogleFonts.jetBrainsMono(
+                    fontSize: 8,
+                    color:
+                        KiranaColors.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Icon(
+            Icons.chevron_right_rounded,
+            size: 20,
+            color: KiranaColors.onSurfaceVariant,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCryptographicSeal(Invoice invoice) {
+    final invoiceNumber = _invoiceNumber(invoice);
+    final hash = _generateLocalHash(invoice);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: KiranaColors.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.verified_user_rounded,
+                size: 16,
+                color: KiranaColors.onTertiaryContainer,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'LOCAL AUDIT LOG',
+                style: GoogleFonts.jetBrainsMono(
+                  fontSize: 9,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'INVOICE: $invoiceNumber',
+            style: GoogleFonts.jetBrainsMono(
+              fontSize: 8,
+              color: KiranaColors.onSurfaceVariant,
+            ),
+          ),
+          Text(
+            'LOCAL HASH: $hash',
+            style: GoogleFonts.jetBrainsMono(
+              fontSize: 8,
+              color: KiranaColors.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            children: [
+              _buildSealTag('• GST DATA VALIDATED'),
+              _buildSealTag('• OFFLINE READY'),
+              _buildSealTag(
+                _isPaid
+                    ? '• PAYMENT SETTLED'
+                    : '• PAYMENT PENDING',
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _generateLocalHash(Invoice invoice) {
+    final raw = [
+      invoice.customerId ?? '',
+      invoice.customerName ?? '',
+      invoice.grandTotal.toStringAsFixed(2),
+      ...invoice.items.map(
+        (item) =>
+            '${item.id}|${item.name}|${item.quantity}|'
+            '${item.unitPrice}|${item.gstRate.percent}',
+      ),
+    ].join('|');
+
+    return raw.hashCode.abs().toRadixString(16).padLeft(16, '0');
+  }
+
+  Widget _buildSealTag(String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 6,
+        vertical: 2,
+      ),
+      decoration: BoxDecoration(
+        color: KiranaColors.surfaceContainer,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        label,
+        style: GoogleFonts.jetBrainsMono(
+          fontSize: 8,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+}

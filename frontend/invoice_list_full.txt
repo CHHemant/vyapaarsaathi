@@ -1,0 +1,476 @@
+﻿// lib/screens/invoices/invoice_list_screen.dart
+
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
+import '../../theme/kirana_colors.dart';
+
+class InvoiceListScreen extends ConsumerWidget {
+  const InvoiceListScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Scaffold(
+      backgroundColor: KiranaColors.bg,
+      appBar: AppBar(
+        title: Text('GST SUITE',
+            style: GoogleFonts.bebasNeue(fontSize: 24, letterSpacing: 1.0)),
+        centerTitle: true,
+        actions: [
+          IconButton(icon: const Icon(Icons.search_rounded), onPressed: () {}),
+          IconButton(
+              icon: const Icon(Icons.filter_list_rounded), onPressed: () {}),
+        ],
+      ),
+      body: Column(
+        children: [
+          _buildFilterTabs(),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                _buildHeroItcCard(),
+                const SizedBox(height: 24),
+                _buildActionCard(context),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('RECENT B2B INVOICES',
+                        style: GoogleFonts.bebasNeue(
+                            fontSize: 20,
+                            color: KiranaColors.primary,
+                            letterSpacing: 1.0)),
+                    Text('SHOWING 3 OF 48',
+                        style: GoogleFonts.jetBrainsMono(
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                            color: KiranaColors.onSurfaceVariant)),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                _buildInvoiceCard(
+                    'Shree Ganesh Logistics (P) Ltd',
+                    345000,
+                    '#VS-2024-089 â€¢ Today, 02:15 PM',
+                    '27AABCS1429B1Z8',
+                    'IRN GENERATED'),
+                _buildInvoiceCard(
+                    'Bharat Agro Traders',
+                    118500,
+                    '#VS-2024-088 â€¢ Yesterday',
+                    '07AAACB2190A1Z5',
+                    'E-WAY ACTIVE',
+                    isPending: true),
+                _buildInvoiceCard(
+                    'Apex Retail Solutions',
+                    84200,
+                    '#VS-2024-087 â€¢ AUTO-MATCHED 2B',
+                    '27AABCS1429B1Z8',
+                    'PAID IN FULL',
+                    isDark: true),
+                const SizedBox(height: 24),
+                _buildFooter(),
+              ],
+            ),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => context.pushNamed('create_invoice'),
+        backgroundColor: KiranaColors.primary,
+        child: const Icon(Icons.add_rounded, color: Colors.white),
+      ),
+    );
+  }
+
+  Widget _buildFilterTabs() {
+    return Container(
+      height: 48,
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        children: [
+          _buildTab('All Invoices', isActive: true),
+          _buildTab('E-Way Bills'),
+          _buildTab('GSTR-1 Ready'),
+          _buildTab('Overdue'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTab(String label, {bool isActive = false}) {
+    return Container(
+      margin: const EdgeInsets.only(right: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      decoration: BoxDecoration(
+        color: isActive ? KiranaColors.primary : Colors.transparent,
+        borderRadius: BorderRadius.circular(100),
+        border: Border.all(
+            color: isActive
+                ? KiranaColors.primary
+                : KiranaColors.onSurface.withValues(alpha: 0.2)),
+      ),
+      child: Center(
+        child: Text(
+          label,
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: isActive ? Colors.white : KiranaColors.onSurface,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeroItcCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: KiranaColors.tertiaryContainer,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8)
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('TAX PERIOD: OCT-DEC â€¢ 2B AUTO-RECO',
+                  style: GoogleFonts.jetBrainsMono(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w800,
+                      color: KiranaColors.onTertiaryContainer
+                          .withValues(alpha: 0.8))),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.4),
+                    borderRadius: BorderRadius.circular(100)),
+                child: Row(
+                  children: [
+                    const CircleAvatar(
+                        radius: 3, backgroundColor: Colors.green),
+                    const SizedBox(width: 4),
+                    Text('NIC LIVE',
+                        style: GoogleFonts.jetBrainsMono(
+                            fontSize: 8, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Verified Input Tax Credit',
+                        style: GoogleFonts.jetBrainsMono(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: KiranaColors.onTertiaryContainer
+                                .withValues(alpha: 0.7))),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
+                      children: [
+                        Text('â‚¹1,42,850',
+                            style: GoogleFonts.bebasNeue(
+                                fontSize: 32,
+                                color: KiranaColors.onTertiaryContainer)),
+                        const SizedBox(width: 4),
+                        Text('ITC READY',
+                            style: GoogleFonts.plusJakartaSans(
+                                fontSize: 12, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                    color: KiranaColors.primary,
+                    borderRadius: BorderRadius.circular(16)),
+                child: Center(
+                    child: Text('G',
+                        style: GoogleFonts.bebasNeue(
+                            fontSize: 36,
+                            color: KiranaColors.tertiaryContainer))),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              _buildMiniMetric('Eligible ITC', 'â‚¹1.42L'),
+              const SizedBox(width: 8),
+              _buildMiniMetric('Tax Payable', 'â‚¹18,400'),
+              const SizedBox(width: 8),
+              _buildMiniMetric('Filing Due', 'In 3 Days', isError: true),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMiniMetric(String label, String value, {bool isError = false}) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.4),
+            borderRadius: BorderRadius.circular(12)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label.toUpperCase(),
+                style: GoogleFonts.jetBrainsMono(
+                    fontSize: 8,
+                    fontWeight: FontWeight.bold,
+                    color: KiranaColors.onTertiaryContainer
+                        .withValues(alpha: 0.7))),
+            Text(value,
+                style: GoogleFonts.plusJakartaSans(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: isError
+                        ? KiranaColors.secondary
+                        : KiranaColors.onTertiaryContainer)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionCard(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: KiranaColors.secondaryContainer,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(100)),
+            child: Text('INSTANT IRN & QR GENERATION',
+                style: GoogleFonts.jetBrainsMono(
+                    fontSize: 9,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    letterSpacing: 1.0)),
+          ),
+          const SizedBox(height: 12),
+          Text('CREATE E-INVOICE / E-WAY',
+              style: GoogleFonts.bebasNeue(
+                  fontSize: 28, color: Colors.white, letterSpacing: 0.5)),
+          const SizedBox(height: 8),
+          Text(
+            'Generate compliant IRN via IRP portal in <2 seconds with dynamic QR code & e-Way bill sync.',
+            style: GoogleFonts.plusJakartaSans(
+                fontSize: 12, color: Colors.white.withValues(alpha: 0.9)),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => context.pushNamed('create_invoice'),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 12, horizontal: 16),
+                    decoration: BoxDecoration(
+                        color: KiranaColors.primary,
+                        borderRadius: BorderRadius.circular(16)),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('NEW B2B INVOICE',
+                            style: GoogleFonts.jetBrainsMono(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white)),
+                        const Icon(Icons.arrow_forward_rounded,
+                            color: Colors.white, size: 16),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(16)),
+                child: const Icon(Icons.chat_bubble_outline_rounded,
+                    color: Colors.white, size: 20),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInvoiceCard(
+      String title, double amount, String subtitle, String gstin, String badge,
+      {bool isPending = false, bool isDark = false}) {
+    final bgColor = isDark ? KiranaColors.primary : Colors.white;
+    final textColor = isDark ? Colors.white : KiranaColors.primary;
+    final subColor = isDark ? Colors.white60 : KiranaColors.onSurfaceVariant;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(20),
+        border: isDark
+            ? null
+            : Border.all(color: KiranaColors.onSurface.withValues(alpha: 0.1)),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 4)
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(subtitle,
+                        style: GoogleFonts.jetBrainsMono(
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                            color: subColor,
+                            letterSpacing: 0.5)),
+                    const SizedBox(height: 4),
+                    Text(title,
+                        style: GoogleFonts.plusJakartaSans(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: textColor),
+                        overflow: TextOverflow.ellipsis),
+                    Text('GSTIN: $gstin',
+                        style: GoogleFonts.jetBrainsMono(
+                            fontSize: 10, color: subColor)),
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text('â‚¹${NumberFormat('#,##,###').format(amount)}',
+                      style: GoogleFonts.bebasNeue(
+                          fontSize: 24, color: textColor)),
+                  Text(isPending ? 'Pending Drawdown' : '18% GST Paid',
+                      style: GoogleFonts.jetBrainsMono(
+                          fontSize: 8,
+                          fontWeight: FontWeight.bold,
+                          color: isPending
+                              ? KiranaColors.secondary
+                              : (isDark
+                                  ? Colors.green
+                                  : Colors.green.shade700))),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const Divider(height: 1, thickness: 0.5, color: Colors.black12),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  _buildStatusBadge(badge, isDark),
+                  const SizedBox(width: 8),
+                  if (!isPending) _buildStatusBadge('GSTR-1 RECO', isDark),
+                ],
+              ),
+              if (isPending)
+                Text('Remind Buyer â†’',
+                    style: GoogleFonts.jetBrainsMono(
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold,
+                        color: KiranaColors.secondary))
+              else
+                Row(
+                  children: [
+                    Text('e-Way Valid',
+                        style: GoogleFonts.plusJakartaSans(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: subColor)),
+                    const SizedBox(width: 4),
+                    const Icon(Icons.check_circle_rounded,
+                        size: 14, color: Colors.green),
+                  ],
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatusBadge(String label, bool isDark) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.white10 : KiranaColors.surfaceContainer,
+        borderRadius: BorderRadius.circular(100),
+        border: isDark ? Border.all(color: Colors.white24) : null,
+      ),
+      child: Text(label,
+          style: GoogleFonts.jetBrainsMono(
+              fontSize: 8,
+              fontWeight: FontWeight.bold,
+              color: isDark ? Colors.white : KiranaColors.onSurface)),
+    );
+  }
+
+  Widget _buildFooter() {
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.verified_rounded,
+                size: 14, color: KiranaColors.onSurfaceVariant),
+            const SizedBox(width: 8),
+            Text('GSTN LICENSED GSP â€¢ NIC E-WAY BILL PORTAL',
+                style: GoogleFonts.jetBrainsMono(
+                    fontSize: 8,
+                    fontWeight: FontWeight.bold,
+                    color: KiranaColors.onSurfaceVariant)),
+          ],
+        ),
+      ],
+    );
+  }
+}
+

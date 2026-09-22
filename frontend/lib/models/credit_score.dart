@@ -69,7 +69,8 @@ class CreditScore {
   factory CreditScore.fromJson(Map<String, dynamic> json) {
     return CreditScore(
       score: (json['score'] as num).toInt(),
-      breakdown: CreditBreakdown.fromJson(json['breakdown'] as Map<String, dynamic>),
+      breakdown:
+          CreditBreakdown.fromJson(json['breakdown'] as Map<String, dynamic>),
       fetchedAt: DateTime.now(),
     );
   }
@@ -85,7 +86,8 @@ class CreditScore {
   factory CreditScore.fromCache(Map<String, dynamic> json) {
     return CreditScore(
       score: (json['score'] as num).toInt(),
-      breakdown: CreditBreakdown.fromJson(json['breakdown'] as Map<String, dynamic>),
+      breakdown:
+          CreditBreakdown.fromJson(json['breakdown'] as Map<String, dynamic>),
       fetchedAt: DateTime.parse(json['fetched_at'] as String),
     );
   }

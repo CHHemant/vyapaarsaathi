@@ -1,13 +1,11 @@
 // frontend/lib/widgets/transaction_tile.dart
 
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../models/transaction.dart';
 import '../theme/kirana_colors.dart';
 
-/// One row in any transaction list (Home's recent activity, a future
-/// transaction-history view). Shows the category emoji, customer name
-/// (or "New Customer" when unidentified), time, and the amount in
-/// Roboto Mono per the design spec.
+/// A sleek transaction tile based on the True Master Dashboard design.
 class TransactionTile extends StatelessWidget {
   final Transaction transaction;
   final VoidCallback? onTap;
@@ -16,57 +14,56 @@ class TransactionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final timeLabel = TimeOfDay.fromDateTime(transaction.timestamp).format(context);
+    final timeLabel =
+        TimeOfDay.fromDateTime(transaction.timestamp).format(context);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(18),
+        color: KiranaColors.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
           ),
         ],
       ),
       child: ListTile(
         onTap: onTap,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
         leading: Container(
-          width: 52,
-          height: 52,
+          width: 44,
+          height: 44,
           decoration: BoxDecoration(
-            color: KiranaColors.primary.withOpacity(0.08),
-            borderRadius: BorderRadius.circular(14),
+            color: KiranaColors.surfaceContainer,
+            shape: BoxShape.circle,
           ),
           alignment: Alignment.center,
           child: Text(
             transaction.category.emoji,
-            style: const TextStyle(fontSize: 24),
+            style: const TextStyle(fontSize: 20),
           ),
         ),
         title: Text(
           transaction.customerName ?? 'Direct Sale',
-          style: theme.textTheme.titleMedium?.copyWith(
+          style: GoogleFonts.plusJakartaSans(
             fontSize: 16,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w700,
+            color: KiranaColors.primary,
           ),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
         subtitle: Row(
           children: [
-            Icon(Icons.access_time_rounded, size: 12, color: theme.colorScheme.onSurface.withOpacity(0.4)),
-            const SizedBox(width: 4),
             Text(
-              timeLabel,
-              style: theme.textTheme.bodySmall?.copyWith(
-                fontSize: 12,
-                color: theme.colorScheme.onSurface.withOpacity(0.5),
+              'INV #VS-${transaction.id.substring(transaction.id.length.clamp(0, 3))} â€¢ $timeLabel',
+              style: GoogleFonts.monoton(
+                fontSize: 9,
+                color: KiranaColors.onSurfaceVariant,
               ),
             ),
           ],
@@ -76,24 +73,33 @@ class TransactionTile extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Text(
-              '₹${transaction.amount.toStringAsFixed(0)}',
-              style: TextStyle(
-                fontFamily: 'RobotoMono',
-                fontSize: 18,
-                fontWeight: FontWeight.w900,
-                color: transaction.amount > 0 ? KiranaColors.secondary : theme.colorScheme.onSurface,
+              'â‚¹${transaction.amount.toStringAsFixed(0)}',
+              style: GoogleFonts.monoton(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: KiranaColors.primary,
               ),
             ),
-            if (!transaction.isSynced)
-              Text(
-                'PENDING',
-                style: TextStyle(
+            const SizedBox(height: 4),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: transaction.isSynced
+                    ? const Color(0xFFC2ECD8)
+                    : const Color(0xFFFFDAD2),
+                borderRadius: BorderRadius.circular(100),
+              ),
+              child: Text(
+                transaction.isSynced ? 'PAID VIA UPI' : 'PENDING SYNC',
+                style: GoogleFonts.monoton(
                   fontSize: 9,
-                  fontWeight: FontWeight.w900,
-                  color: KiranaColors.tertiary,
-                  letterSpacing: 0.5,
+                  fontWeight: FontWeight.w700,
+                  color: transaction.isSynced
+                      ? const Color(0xFF002116)
+                      : const Color(0xFF3D0600),
                 ),
               ),
+            ),
           ],
         ),
       ),
