@@ -375,6 +375,103 @@ No cloud servers
 └─────────────────────────────────────────────────────────────┘
 ```
 
+### **Interactive Component Flow**
+
+```mermaid
+flowchart TD
+
+subgraph group_mobile["Mobile App"]
+  node_dashboard["Dashboard"]
+  node_passive_camera["Passive camera"]
+  node_voice_assistant["Voice assistant"]
+  node_capture_client["API client<br/>[api_service.dart]"]
+  node_invoice_ui["Invoice creation"]
+  node_heatmap_ui["Income heatmap"]
+  node_office_kit["Office Kit"]
+end
+
+subgraph group_capture["Transaction Capture"]
+  node_backend_api["HTTP API<br/>[main.py]"]
+  node_pipeline["Capture pipeline"]
+  node_ai_models["OCR and speech<br/>[ai_models.py]"]
+  node_transactions["Transaction history"]
+end
+
+subgraph group_insights["Financial Insights"]
+  node_analytics["Heatmap aggregation<br/>[analytics.py]"]
+  node_credit["Credit scoring<br/>[credit_scorer.py]"]
+end
+
+subgraph group_compliance["Tax and Invoices"]
+  node_tax["Tax assistant<br/>[tax_assistant.py]"]
+  node_gst["GST invoice PDF<br/>[gst_generator.py]"]
+  node_payments["Payment tools"]
+  node_khata["Party ledger"]
+end
+
+subgraph group_storage["Data and Files"]
+  node_database[("SQLite records<br/>[database.py]")]
+  node_invoice_files["Invoice files<br/>[config.py]"]
+end
+
+node_owner(("Business owner"))
+node_slm["Local language model"]
+
+node_owner -->|"captures activity"| node_passive_camera
+node_owner -->|"asks questions"| node_voice_assistant
+node_owner -->|"views finances"| node_dashboard
+node_owner -->|"creates invoice"| node_invoice_ui
+node_capture_client -->|"sends requests"| node_backend_api
+node_backend_api -->|"dispatches capture"| node_pipeline
+node_pipeline -->|"extracts amount and speech"| node_ai_models
+node_pipeline -->|"writes transaction"| node_database
+node_backend_api -->|"requests score"| node_credit
+node_credit -->|"reads transactions"| node_database
+node_backend_api -->|"requests heatmap"| node_analytics
+node_analytics -->|"reads transactions"| node_database
+node_backend_api -->|"dispatches query"| node_tax
+node_tax -->|"reads monthly totals"| node_database
+node_tax -.->|"prompts for answer"| node_slm
+node_backend_api -->|"requests PDF"| node_gst
+node_backend_api -->|"looks up customer"| node_database
+node_gst -->|"writes PDF"| node_invoice_files
+node_backend_api -->|"serves PDF"| node_invoice_files
+node_dashboard -->|"opens insights"| node_heatmap_ui
+
+click node_dashboard "https://github.com/chhemant/vyapaarsaathi/blob/main/frontend/lib/screens/dashboard/dashboard_screen.dart"
+click node_passive_camera "https://github.com/chhemant/vyapaarsaathi/blob/main/frontend/lib/screens/camera/passive_camera_screen.dart"
+click node_voice_assistant "https://github.com/chhemant/vyapaarsaathi/blob/main/frontend/lib/screens/voice_ai/voice_assistant_screen.dart"
+click node_capture_client "https://github.com/chhemant/vyapaarsaathi/blob/main/frontend/lib/services/api_service.dart"
+click node_invoice_ui "https://github.com/chhemant/vyapaarsaathi/blob/main/frontend/lib/screens/invoices/create_invoice_screen.dart"
+click node_heatmap_ui "https://github.com/chhemant/vyapaarsaathi/blob/main/frontend/lib/screens/dashboard/heatmap_screen.dart"
+click node_office_kit "https://github.com/chhemant/vyapaarsaathi/blob/main/frontend/lib/services/office_kit_service.dart"
+click node_backend_api "https://github.com/chhemant/vyapaarsaathi/blob/main/backend/main.py"
+click node_pipeline "https://github.com/chhemant/vyapaarsaathi/blob/main/backend/transaction_pipeline.py"
+click node_ai_models "https://github.com/chhemant/vyapaarsaathi/blob/main/backend/ai_models.py"
+click node_transactions "https://github.com/chhemant/vyapaarsaathi/blob/main/frontend/lib/screens/transactions/transaction_history_screen.dart"
+click node_analytics "https://github.com/chhemant/vyapaarsaathi/blob/main/backend/analytics.py"
+click node_credit "https://github.com/chhemant/vyapaarsaathi/blob/main/backend/credit_scorer.py"
+click node_tax "https://github.com/chhemant/vyapaarsaathi/blob/main/backend/tax_assistant.py"
+click node_gst "https://github.com/chhemant/vyapaarsaathi/blob/main/backend/gst_generator.py"
+click node_payments "https://github.com/chhemant/vyapaarsaathi/blob/main/frontend/lib/screens/payments/payments_hub_screen.dart"
+click node_khata "https://github.com/chhemant/vyapaarsaathi/blob/main/frontend/lib/screens/khata/party_ledger_screen.dart"
+click node_database "https://github.com/chhemant/vyapaarsaathi/blob/main/backend/database.py"
+click node_invoice_files "https://github.com/chhemant/vyapaarsaathi/blob/main/backend/config.py"
+
+classDef toneNeutral fill:#f8fafc,stroke:#334155,stroke-width:1.5px,color:#0f172a
+classDef toneBlue fill:#dbeafe,stroke:#2563eb,stroke-width:1.5px,color:#172554
+classDef toneAmber fill:#fef3c7,stroke:#d97706,stroke-width:1.5px,color:#78350f
+classDef toneMint fill:#dcfce7,stroke:#16a34a,stroke-width:1.5px,color:#14532d
+classDef toneRose fill:#ffe4e6,stroke:#e11d48,stroke-width:1.5px,color:#881337
+classDef toneIndigo fill:#e0e7ff,stroke:#4f46e5,stroke-width:1.5px,color:#312e81
+classDef toneTeal fill:#ccfbf1,stroke:#0f766e,stroke-width:1.5px,color:#134e4a
+class node_dashboard,node_passive_camera,node_voice_assistant,node_capture_client,node_invoice_ui,node_heatmap_ui,node_office_kit toneBlue
+class node_backend_api,node_pipeline,node_ai_models,node_transactions toneAmber
+class node_analytics,node_credit toneMint
+class node_tax,node_gst,node_payments,node_khata toneRose
+class node_database,node_invoice_files,node_owner,node_slm toneIndigo
+```
+
 ---
 
 ## **Folder Structure**
